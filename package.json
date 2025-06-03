@@ -26,8 +26,9 @@
             "prettier --write"
         ],
         "**/*.{js,jsx,ts,tsx}": [
-            "lint",
-            "format"
+            "prettier --write",
+            "eslint --fix",
+            "oxlint  --fix -D correctness --ignore-path .gitignore"
         ]
     },
     "devDependencies": {
