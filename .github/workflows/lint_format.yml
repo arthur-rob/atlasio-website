@@ -1,0 +1,29 @@
+name: Lint and Format Check on PRs
+
+on:
+    pull_request: # Run on all pull requests
+
+env:
+    NODE_VERSION: 20.x
+
+jobs:
+    lint-and-format:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+
+            - name: Install dependencies with pnpm
+              run: yarn install --frozen-lockfile
+
+            - name: Run formatter check
+              run: yarn run lint
+
+            - name: Run formatter check
+              run: yarn run format

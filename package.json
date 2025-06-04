@@ -28,10 +28,11 @@
         "**/*.{js,jsx,ts,tsx}": [
             "prettier --write",
             "eslint --fix",
-            "oxlint  --fix -D correctness --ignore-path .gitignore"
+            "oxlint --fix -D correctness --ignore-path .gitignore"
         ]
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.1.8",
         "@tsconfig/node22": "^22.0.1",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^22.14.0",
@@ -51,6 +52,7 @@
         "npm-run-all2": "^7.0.2",
         "oxlint": "^0.16.0",
         "prettier": "3.5.3",
+        "tailwindcss": "^4.1.8",
         "typescript": "~5.8.0",
         "vite": "^6.2.4",
         "vite-plugin-vue-devtools": "^7.7.2",
