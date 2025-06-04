@@ -1,0 +1,26 @@
+name: Run Tests on All PRs
+
+on:
+    pull_request:
+
+env:
+    NODE_VERSION: 20.x
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Run tests
+              run: npm run test:unit
