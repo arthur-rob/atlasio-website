@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseNavigation from './components/BaseNavigation.vue';
+import BaseNavigation from './components/BaseNavigation.vue'
 </script>
 
 <template>
@@ -9,4 +9,3 @@ import BaseNavigation from './components/BaseNavigation.vue';
 
     <RouterView />
 </template>
-
