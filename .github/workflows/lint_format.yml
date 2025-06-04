@@ -19,11 +19,11 @@ jobs:
               with:
                   node-version: ${{ env.NODE_VERSION }}
 
-            - name: Install dependencies
-              run: npm install
-
-            - name: Run linter
-              run: npm run lint
+            - name: Install dependencies with pnpm
+              run: yarn install --frozen-lockfile
 
             - name: Run formatter check
-              run: npm run format
+              run: yarn run lint
+
+            - name: Run formatter check
+              run: yarn run format
