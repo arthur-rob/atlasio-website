@@ -74,14 +74,28 @@ export function useMap(containerId: string, options?: MapOptions) {
             })
             .join(' L')
     }
+
     const createSvgLineByFeature = (feature: GeoJSONFeature): void => {
-        if (feature.geometry.type == 'MultiLineString')
-            feature.geometry.coordinates.forEach((el) => createSvgLine(el))
-        else if (feature.geometry.type == 'LineString') createSvgLine(feature.geometry.coordinates)
-        else if (feature.geometry.type == 'Polygon') createSvgLine(feature.geometry.coordinates[0])
-        else if (feature.geometry.type == 'MultiPolygon')
-            feature.geometry.coordinates.forEach((poly) => poly.forEach((el) => createSvgLine(el)))
+        const geo = feature.geometry
+
+        switch (geo.type) {
+            case 'LineString':
+                createSvgLine(geo.coordinates)
+                break
+            case 'MultiLineString':
+                geo.coordinates.forEach(createSvgLine)
+                break
+            case 'Polygon':
+                createSvgLine(geo.coordinates[0])
+                break
+            case 'MultiPolygon':
+                geo.coordinates.forEach((polygon) => polygon.forEach(createSvgLine))
+                break
+            default:
+                console.warn(`Unsupported geometry type: ${geo.type}`)
+        }
     }
+
     const createSvgLine = (el: number[][]): void => {
         const path = document.createElementNS(svgNS, 'path')
         const d = `M${coordsToPath(el)}`

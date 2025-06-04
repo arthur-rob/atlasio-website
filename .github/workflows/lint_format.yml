@@ -22,7 +22,7 @@ jobs:
             - name: Install dependencies with pnpm
               run: yarn install --frozen-lockfile
 
-            - name: Run formatter check
+            - name: Run Linter check
               run: yarn run lint
 
             - name: Run formatter check
