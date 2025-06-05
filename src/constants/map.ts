@@ -10,6 +10,26 @@ export const MAP_SOURCES: SourceSpecification = {
         url: `https://api.maptiler.com/tiles/v3/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
     },
 }
+
+const MAP_TEXT_LAYER: LayerSpecification = {
+    id: 'roads-text',
+    source: 'planet',
+    type: 'symbol',
+    'source-layer': 'transportation_name',
+    layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['Noto Sans Regular'],
+        'text-size': 12,
+        'symbol-placement': 'line',
+        visibility: 'none',
+    },
+    paint: {
+        'text-color': '#555',
+        'text-halo-color': '#fff',
+        'text-halo-width': 1,
+    },
+}
+
 export const MAP_LAYERS: LayerSpecification[] = [
     {
         id: 'buildings-line',
@@ -26,7 +46,11 @@ export const MAP_LAYERS: LayerSpecification[] = [
         type: 'line',
         source: 'planet',
         'source-layer': 'transportation',
-        filter: ['!', ['in', ['get', 'class'], ['literal', ['ferry', 'boat', 'waterway']]]],
+        filter: [
+            'all',
+            ['!', ['in', ['get', 'class'], ['literal', ['ferry', 'boat', 'waterway']]]],
+            ['!', ['in', ['get', 'class'], ['literal', ['track', 'path']]]],
+        ],
         paint: {
             'line-color': '#808080',
             'line-width': 1.5,
@@ -51,4 +75,15 @@ export const MAP_LAYERS: LayerSpecification[] = [
             'line-width': 1,
         },
     },
+    {
+        id: 'contour-ft-lines',
+        type: 'line',
+        source: 'contours',
+        'source-layer': 'contour_ft',
+        paint: {
+            'line-color': '#000',
+            'line-width': 1,
+        },
+    },
+    MAP_TEXT_LAYER,
 ]
