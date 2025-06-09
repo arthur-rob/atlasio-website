@@ -20,6 +20,11 @@ export function useMap() {
         })
     }
 
+    const toggleMapLayer = (layerId: string, isVisible: boolean) => {
+        if (!map.value) return
+        map.value.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none')
+    }
+
     onUnmounted(() => {
         if (!map.value) return
         map.value.remove()
@@ -29,5 +34,6 @@ export function useMap() {
     return {
         map,
         initMap,
+        toggleMapLayer,
     }
 }

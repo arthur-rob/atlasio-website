@@ -70,6 +70,21 @@ export const MAP_LAYERS: LayerSpecification[] = [
         type: 'line',
         source: 'contours',
         'source-layer': 'contour',
+        filter: ['!=', ['to-number', ['get', 'nth_line']], 5],
+        paint: {
+            'line-color': '#999',
+            'line-width': 1,
+        },
+    },
+    {
+        id: 'contours-50m',
+        type: 'line',
+        source: 'contours',
+        'source-layer': 'contour',
+        filter: ['==', ['to-number', ['get', 'nth_line']], 5],
+        layout: {
+            visibility: 'visible',
+        },
         paint: {
             'line-color': '#000',
             'line-width': 1,
@@ -79,9 +94,12 @@ export const MAP_LAYERS: LayerSpecification[] = [
         id: 'contour-ft-lines',
         type: 'line',
         source: 'contours',
+        layout: {
+            visibility: 'none',
+        },
         'source-layer': 'contour_ft',
         paint: {
-            'line-color': '#000',
+            'line-color': '#888',
             'line-width': 1,
         },
     },
