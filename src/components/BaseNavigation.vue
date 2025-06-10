@@ -1,12 +1,12 @@
 <template>
-    <div class="bg-white shadow-sm sticky top-0 z-50">
+    <div class=" sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <RouterLink
                     to="/"
                     class="hover:text-primary-foreground/80 flex items-center transition-colors"
                 >
-                    <img src="/logo/atlas.png" width="60px" alt="logo atlas" />
+                    <img src="/logo/atlas.png" width="50px" alt="logo atlas" />
                     <h2>Atlasio</h2>
                 </RouterLink>
                 <div class="hidden md:flex items-center space-x-8">
