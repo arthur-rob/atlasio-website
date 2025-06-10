@@ -91,6 +91,19 @@ export const MAP_LAYERS: LayerSpecification[] = [
         },
     },
     {
+        id: 'boundary',
+        type: 'line',
+        source: 'planet',
+        'source-layer': 'boundary',
+        layout: {
+            visibility: 'visible',
+        },
+        paint: {
+            'line-color': '#f00',
+            'line-width': 1,
+        },
+    },
+    {
         id: 'contour-ft-lines',
         type: 'line',
         source: 'contours',
