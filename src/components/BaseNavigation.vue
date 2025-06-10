@@ -1,5 +1,5 @@
 <template>
-    <div class=" sticky top-0 z-50">
+    <div class="sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <RouterLink

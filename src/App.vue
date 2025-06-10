@@ -4,7 +4,7 @@ import BaseBackground from './components/BaseBackground.vue'
 </script>
 
 <template>
-    <BaseBackground/>
+    <BaseBackground />
     <header>
         <BaseNavigation />
     </header>

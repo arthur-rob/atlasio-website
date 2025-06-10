@@ -25,6 +25,12 @@ export function useMap() {
         map.value.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none')
     }
 
+    const flyTo = (center: [number, number]) => {
+        map.value?.flyTo({
+            center: center,
+            essential: true,
+        })
+    }
     onUnmounted(() => {
         if (!map.value) return
         map.value.remove()
@@ -35,5 +41,6 @@ export function useMap() {
         map,
         initMap,
         toggleMapLayer,
+        flyTo,
     }
 }

@@ -1,1 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Karla:wght@600;700&family=Source+Sans+3:wght@400;500&display=swap');
 @import 'tailwindcss';
+/* Font Import */
+
+:root {
+    --font-title: 'Karla', sans-serif;
+    --font-body: 'Source Sans 3', sans-serif;
+
+    /* Balanced, responsive font sizes */
+    --font-size-title: clamp(1.5rem, 2.5vw + 0.5rem, 2.5rem);
+    --font-size-body: clamp(0.95rem, 1.1vw + 0.3rem, 1.15rem);
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    color: #222;
+    background-color: #fff;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: var(--font-size-title);
+    margin: 0.5em 0;
+}
+
+p,
+input,
+textarea,
+button,
+label {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    font-weight: 400;
+}
