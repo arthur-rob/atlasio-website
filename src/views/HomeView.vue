@@ -2,10 +2,11 @@
 
 <template>
     <main>
-            <h1>Hello World</h1>
+        <h1>Hello World</h1>
 
-            <nav>
-                <RouterLink to="/">Home</RouterLink>
-                <RouterLink to="/editor">Editor</RouterLink>
-            </nav></main>
+        <nav>
+            <RouterLink to="/">Home</RouterLink>
+            <RouterLink to="/editor">Editor</RouterLink>
+        </nav>
+    </main>
 </template>
