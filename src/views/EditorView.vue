@@ -22,12 +22,11 @@
                         <label :for="layer.id">{{ layer.source }} - {{ layer.id }}</label>
                     </div>
                     <div class="flex justify-end">
-                        <button
-                            class="mx-2 my-4 px-4 py-1 cursor-pointer bg-blue-700 text-white rounded hover:bg-blue-600 transition"
+                        <BaseButton
+                            append-icon="arrow_right_alt"
                             @click="svg.exportSvg(queryFeatures)"
+                            >Generate</BaseButton
                         >
-                            Export Svg
-                        </button>
                     </div>
                 </BaseCard>
             </div>
@@ -35,6 +34,7 @@
     </EditorLayout>
 </template>
 <script lang="ts" setup>
+import BaseButton from '@/components/Ui/BaseButton.vue'
 import BaseCard from '@/components/Ui/BaseCard.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import EditorLayout from '@/layouts/EditorLayout.vue'

@@ -11,12 +11,15 @@
 <script setup lang="ts">
 import { defineModel } from 'vue'
 
-withDefaults(defineProps<{
-    placeholder?: string,
-    disabled?: boolean
-}>(), {
-    disabled: false
-})
+withDefaults(
+    defineProps<{
+        placeholder?: string
+        disabled?: boolean
+    }>(),
+    {
+        disabled: false,
+    },
+)
 
 const model = defineModel<string>('modelValue', {
     required: true,
