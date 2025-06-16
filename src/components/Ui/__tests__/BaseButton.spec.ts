@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import BaseButton from '../../Ui/BaseButton.vue'
+import BaseButton from '../BaseButton.vue'
 describe('BaseButton', () => {
     it('renders slot content', () => {
         const wrapper = mount(BaseButton, {

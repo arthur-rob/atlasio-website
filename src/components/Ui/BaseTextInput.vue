@@ -14,14 +14,14 @@
 <script setup lang="ts">
 import { defineModel, ref, inject, onMounted } from 'vue'
 
-const error = ref<string| null>()
+const error = ref<string | null>()
 const componentId = `input-${Math.random().toString(36).substring(2, 10)}`
-const registerField = inject<((id: string, validateFn: () => boolean) => void)>('registerField')
+const registerField = inject<(id: string, validateFn: () => boolean) => void>('registerField')
 const props = withDefaults(
     defineProps<{
         placeholder?: string
         disabled?: boolean
-        rules?: ((value: string) => string | true)[] 
+        rules?: ((value: string) => string | true)[]
     }>(),
     {
         disabled: false,
@@ -32,7 +32,7 @@ const model = defineModel<string>('modelValue', {
     required: true,
 })
 
-const validate = (): boolean =>  {
+const validate = (): boolean => {
     error.value = null
     for (const rule of props.rules) {
         const result = rule(model.value)
@@ -43,7 +43,6 @@ const validate = (): boolean =>  {
     }
     return true
 }
-
 
 onMounted(() => {
     registerField?.(componentId, validate)

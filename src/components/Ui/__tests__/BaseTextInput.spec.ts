@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import BaseTextInput from '../../Ui/BaseTextInput.vue'
+import BaseTextInput from '../BaseTextInput.vue'
 
 describe('BaseTextInput', () => {
     it('renders an input element', () => {
