@@ -1,6 +1,12 @@
 import { type LayerSpecification, type SourceSpecification } from 'maplibre-gl'
 
-export const MAP_SOURCES: SourceSpecification = {
+export const MAP_GLYPHS = `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${import.meta.env.VITE_MAPTILER_API_KEY}`
+
+export const MAP_SOURCES: Record<string, SourceSpecification> = {
+    basic: {
+        type: 'vector',
+        url: `https://api.maptiler.com/maps/basic-v2/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
+    },
     contours: {
         type: 'vector',
         url: `https://api.maptiler.com/tiles/contours-v2/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
@@ -41,6 +47,7 @@ export const MAP_LAYERS: LayerSpecification[] = [
             'line-opacity': 0.8,
         },
     },
+
     {
         id: 'roads-line',
         type: 'line',
