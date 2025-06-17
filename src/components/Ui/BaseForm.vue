@@ -19,7 +19,7 @@ const registerField = (id: string, validateFn: () => boolean) => {
 
 const validate = (): true | string[] => {
     const invalidFields = Object.entries(fields)
-        .filter(([_, field]) => !field.validate())
+        .filter(([, field]) => !field.validate())
         .map(([id]) => id)
 
     return invalidFields.length === 0 ? true : invalidFields
