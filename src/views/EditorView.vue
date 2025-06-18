@@ -1,9 +1,7 @@
 <template>
     <EditorLayout>
         <template #map>
-            <BaseCard>
-                <div id="map"></div>
-            </BaseCard>
+            <div id="map" :class="[{ 'fade-out': !isMapLoaded }]"></div>
         </template>
         <template #options>
             <div class="option-form w-1/3">
@@ -45,6 +43,7 @@ import BaseAdressAutoComplete from '@/components/Ui/BaseAdressAutoComplete.vue'
 
 const map = useMap()
 const svg = useSvgExport()
+const isMapLoaded = ref(false)
 const selectedLayer = ref<string[]>(
     MAP_LAYERS.filter((el) => el.layout?.visibility !== 'none').map((el) => el.id),
 )
@@ -69,11 +68,28 @@ watch(selectedLayer, (value) => {
         map.toggleMapLayer(el.id, isVisible)
     })
 })
-onMounted(() => map.initMap('map'))
+onMounted(async () => {
+    await map.initMap('map')
+    /* await map.addExternalStyleLayers(
+        `https://api.maptiler.com/maps/basic-v2/style.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
+        'basic',
+    ) */
+    isMapLoaded.value = true
+})
 </script>
-<style>
+<style scoped lang="scss">
+.option-form {
+    z-index: 10;
+}
 #map {
-    width: 630px;
-    height: 891px;
+    position: absolute;
+    z-index: 0;
+    width: 100%;
+    height: 100vh;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+}
+#map.fade-out {
+    opacity: 0;
 }
 </style>

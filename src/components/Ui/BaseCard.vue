@@ -1,5 +1,5 @@
 <template>
-    <div class="base-card-wrapper bg-white/20 backdrop-blur-sm">
+    <div class="base-card-wrapper bg-white">
         <slot></slot>
     </div>
 </template>

@@ -11,7 +11,7 @@ describe('Form validation', () => {
                 components: { BaseForm, BaseInput },
                 setup() {
                     const model = ref({ username: 'aRthur', email: 'arthur@atlasio.app' })
-                    const validateFormRef = ref<(() => true | string[]) | undefined>(undefined)
+                    const validateFormRef = ref<InstanceType<typeof BaseForm> | null>(null)
                     return {
                         model,
                         validateFormRef,
@@ -38,7 +38,7 @@ describe('Form validation', () => {
                 components: { BaseForm, BaseInput },
                 setup() {
                     const model = ref({ username: '', email: 'not-an-email' })
-                    const validateFormRef = ref<(() => true | string[]) | undefined>(undefined)
+                    const validateFormRef = ref<InstanceType<typeof BaseForm> | null>(null)
                     return {
                         model,
                         validateFormRef,
@@ -57,7 +57,7 @@ describe('Form validation', () => {
 
         const result = wrapper.vm.validateFormRef?.validate()
         expect(Array.isArray(result)).toBe(true)
-        expect(result.length).toBe(2)
+        expect(result?.length).toBe(2)
     })
     it('returns invalid field corresponding to correct form', async () => {
         const wrapper = mount(
@@ -66,8 +66,8 @@ describe('Form validation', () => {
                 setup() {
                     const model = ref({ username: '', email: 'arthur@atlasio.app' })
                     const model2 = ref({ lastname: 'Rob', firstname: 'arthur' })
-                    const validateFormRef = ref<(() => true | string[]) | undefined>(undefined)
-                    const validateFormRef2 = ref<(() => true | string[]) | undefined>(undefined)
+                    const validateFormRef = ref<InstanceType<typeof BaseForm> | null>(null)
+                    const validateFormRef2 = ref<InstanceType<typeof BaseForm> | null>(null)
                     return {
                         model,
                         validateFormRef,

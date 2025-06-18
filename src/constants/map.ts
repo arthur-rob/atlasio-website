@@ -38,29 +38,85 @@ const MAP_TEXT_LAYER: LayerSpecification = {
 
 export const MAP_LAYERS: LayerSpecification[] = [
     {
-        id: 'buildings-line',
-        type: 'line',
+        id: 'buildings-fill',
         source: 'planet',
         'source-layer': 'building',
+        type: 'fill',
         paint: {
-            'line-color': '#8B4513',
-            'line-opacity': 0.8,
+            'fill-color': '#222',
+            'fill-opacity': 1,
         },
     },
-
     {
-        id: 'roads-line',
+        id: 'roads-line-major',
         type: 'line',
         source: 'planet',
         'source-layer': 'transportation',
         filter: [
-            'all',
-            ['!', ['in', ['get', 'class'], ['literal', ['ferry', 'boat', 'waterway']]]],
-            ['!', ['in', ['get', 'class'], ['literal', ['track', 'path']]]],
+            'in',
+            ['get', 'class'],
+            [
+                'literal',
+                [
+                    'motorway',
+                    'primary',
+                    'trunk',
+                    'minor',
+                    'secondary',
+                    'tertiary',
+                    'residential',
+                    'service',
+                    'track',
+                    'busway',
+                    'raceway',
+                ],
+            ],
         ],
         paint: {
-            'line-color': '#808080',
-            'line-width': 1.5,
+            'line-color': '#000000',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 5, 2, 10, 4, 14, 6],
+        },
+    },
+    {
+        id: 'road-fill',
+        type: 'line',
+        source: 'planet',
+        'source-layer': 'transportation',
+        filter: [
+            'in',
+            ['get', 'class'],
+            [
+                'literal',
+                [
+                    'motorway',
+                    'primary',
+                    'trunk',
+                    'minor',
+                    'secondary',
+                    'tertiary',
+                    'residential',
+                    'service',
+                    'track',
+                    'busway',
+                    'raceway',
+                ],
+            ],
+        ],
+        paint: {
+            'line-color': [
+                'match',
+                ['get', 'class'],
+                'motorway',
+                '#ffffff', // yellow
+                'primary',
+                '#ffffff', // white
+                'secondary',
+                '#ffffff', // light gray
+                'residential',
+                '#ffffff', // very light gray
+                '#ffffff', // fallback
+            ],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.5, 10, 2, 14, 4],
         },
     },
     {
@@ -69,7 +125,7 @@ export const MAP_LAYERS: LayerSpecification[] = [
         source: 'planet',
         'source-layer': 'water',
         paint: {
-            'line-color': '#3399FF',
+            'line-color': '#000',
         },
     },
     {
@@ -94,7 +150,7 @@ export const MAP_LAYERS: LayerSpecification[] = [
         },
         paint: {
             'line-color': '#000',
-            'line-width': 1,
+            'line-width': 1.2,
         },
     },
     {
@@ -103,14 +159,14 @@ export const MAP_LAYERS: LayerSpecification[] = [
         source: 'planet',
         'source-layer': 'boundary',
         layout: {
-            visibility: 'visible',
+            visibility: 'none',
         },
         paint: {
-            'line-color': '#f00',
+            'line-color': '#F00',
             'line-width': 1,
         },
     },
-    {
+    /* {
         id: 'contour-ft-lines',
         type: 'line',
         source: 'contours',
@@ -122,6 +178,6 @@ export const MAP_LAYERS: LayerSpecification[] = [
             'line-color': '#888',
             'line-width': 1,
         },
-    },
+    }, */
     MAP_TEXT_LAYER,
 ]

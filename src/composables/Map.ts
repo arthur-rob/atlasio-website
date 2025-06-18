@@ -5,28 +5,32 @@ import maplibregl, { Map, type MapOptions } from 'maplibre-gl'
 const map = ref<Map | null>(null)
 
 export function useMap() {
-    const initMap = (containerId: string, options?: MapOptions) => {
-        map.value = new maplibregl.Map({
-            container: containerId,
-            style: {
-                version: 8,
-                sources: MAP_SOURCES,
-                layers: MAP_LAYERS,
-                glyphs: MAP_GLYPHS,
-            },
-            center: [5.420586, 43.210837],
-            zoom: 14,
-            ...options,
-        })
-        map.value.on('load', () => {
-            addExternalStyleLayers(
-                `https://api.maptiler.com/maps/basic-v2/style.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
-                'basic',
-            )
+    const initMap = (containerId: string, options?: MapOptions): Promise<void> => {
+        return new Promise<void>((resolve, reject) => {
+            try {
+                map.value = new maplibregl.Map({
+                    container: containerId,
+                    style: {
+                        version: 8,
+                        sources: MAP_SOURCES,
+                        layers: MAP_LAYERS,
+                        glyphs: MAP_GLYPHS,
+                    },
+                    center: [5.420586, 43.210837],
+                    zoom: 14,
+                    ...options,
+                })
+                map.value.on('load', () => {
+                    resolve()
+                })
+            } catch (error) {
+                console.error('Failed to initialize map:', error)
+                reject(error)
+            }
         })
     }
 
-    const addExternalStyleLayers = async (styleUrl: string, sourceName: string) => {
+    const addExternalStyleLayers = async (styleUrl: string, sourceName: string): Promise<void> => {
         if (!map.value) return
 
         try {
@@ -53,17 +57,19 @@ export function useMap() {
             console.error('Failed to load external style:', err)
         }
     }
-    const toggleMapLayer = (layerId: string, isVisible: boolean) => {
+
+    const toggleMapLayer = (layerId: string, isVisible: boolean): void => {
         if (!map.value) return
         map.value.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none')
     }
 
-    const flyTo = (center: [number, number]) => {
+    const flyTo = (center: [number, number]): void => {
         map.value?.flyTo({
             center: center,
             essential: true,
         })
     }
+
     onUnmounted(() => {
         if (!map.value) return
         map.value.remove()
@@ -74,6 +80,7 @@ export function useMap() {
         map,
         initMap,
         toggleMapLayer,
+        addExternalStyleLayers,
         flyTo,
     }
 }
