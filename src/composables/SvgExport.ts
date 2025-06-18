@@ -10,6 +10,7 @@ export interface queryFeatures {
 const svgNS = 'http://www.w3.org/2000/svg'
 let svg = document.createElementNS(svgNS, 'svg')
 let svgGroupElement = document.createElementNS(svgNS, 'g')
+
 export function useSvgExport() {
     const { map } = useMap()
     const exportSvg = (queryFeatures: queryFeatures[]) => {
@@ -26,6 +27,7 @@ export function useSvgExport() {
         svg.style.background = '#000'
 
         queryFeatures.forEach((qf) => {
+            const seenFeatureIds = new Set()
             resetSvgGroup()
             svgGroupElement.id = qf.source
             map.value
@@ -33,10 +35,14 @@ export function useSvgExport() {
                     sourceLayer: qf.source,
                     filter: qf.filter,
                 })
-                .forEach(createSvgLineByFeature)
+                .forEach((feature) => {
+                    if (feature.id && !seenFeatureIds.has(feature.id)) {
+                        seenFeatureIds.add(feature.id)
+                        createSvgLineByFeature(feature)
+                    }
+                })
             svg.appendChild(svgGroupElement)
         })
-
         triggerDownload()
     }
 
@@ -49,9 +55,9 @@ export function useSvgExport() {
     }
     const coordsToPath = (coords: number[][]): string => {
         return coords
-            .map((coord) => {
-                const pixel = map.value?.project([coord[0], coord[1]])
-                return `${pixel.x},${pixel.y}`
+            .map(([lng, lat]) => {
+                const pixel = map.value?.project([lng, lat])
+                return `${pixel?.x.toFixed(2)},${pixel?.y.toFixed(2)}`
             })
             .join(' L')
     }
@@ -66,10 +72,10 @@ export function useSvgExport() {
                 geo.coordinates.forEach(createSvgLine)
                 break
             case 'Polygon':
-                createSvgLine(geo.coordinates[0])
+                geo.coordinates.forEach(createSvgLine)
                 break
             case 'MultiPolygon':
-                geo.coordinates.forEach((polygon) => polygon.forEach(createSvgLine))
+                geo.coordinates.forEach((polygons) => polygons.forEach(createSvgLine))
                 break
             default:
                 console.warn(`Unsupported geometry type: ${geo.type}`)
@@ -81,7 +87,7 @@ export function useSvgExport() {
         const d = `M${coordsToPath(el)}`
         path.setAttribute('d', d)
         path.setAttribute('fill', 'none')
-        path.setAttribute('stroke', '#fff')
+        path.setAttribute('stroke', '#ffffff')
         path.setAttribute('stroke-width', '1')
         svgGroupElement.appendChild(path)
     }
