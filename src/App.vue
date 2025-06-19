@@ -5,9 +5,6 @@ import BaseBackground from './components/BaseBackground.vue'
 
 <template>
     <BaseBackground />
-    <header>
-        <BaseNavigation />
-    </header>
-
+    <BaseNavigation />
     <RouterView />
 </template>
