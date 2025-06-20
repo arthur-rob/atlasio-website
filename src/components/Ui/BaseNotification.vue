@@ -24,12 +24,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-
-interface NotificationDisplayOption {
-    icon: string
-    color: string
-}
-
 const props = withDefaults(
     defineProps<{
         type: NotificationType

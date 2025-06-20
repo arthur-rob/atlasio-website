@@ -18,14 +18,13 @@
                     ]"
                 />
                 <BaseButton
-                    @click="loginFormRef.validate()"
+                    @click="handleLogin"
                     class="bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
                 >
                     Login
                 </BaseButton>
             </BaseForm>
         </BaseCard>
-        <BaseNotification type="warning" class="mt-4"> test </BaseNotification>
     </div>
 </template>
 
@@ -35,13 +34,31 @@ import BaseForm from '@/components/Ui/BaseForm.vue'
 import BaseTextInput from '@/components/Ui/BaseTextInput.vue'
 import BaseButton from '@/components/Ui/BaseButton.vue'
 import BaseCard from '@/components/Ui/BaseCard.vue'
-import BaseNotification from '@/components/Ui/BaseNotification.vue'
+import { useNotificationStore } from '@/store/Notifications'
 import { emailValidatorRule } from '@/utils/validators'
 const loginFormRef = ref<InstanceType<typeof BaseForm>>(null)
 const loginForm = ref({
     email: '',
     password: '',
 })
+const notificationStore = useNotificationStore()
+
+const handleLogin = async () => {
+    if (!loginFormRef.value?.validate()) return
+    try {
+        // Simulate login API call
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        notificationStore.add({
+            type: 'success',
+            message: 'Login successful!',
+        })
+    } catch (error) {
+        notificationStore.add({
+            type: 'error',
+            message: 'Login failed. Please try again.',
+        })
+    }
+}
 </script>
 
 <style scoped lang="scss"></style>

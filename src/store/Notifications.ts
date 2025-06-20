@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-const DEFAULT_DURATION = 5000
+const DEFAULT_DURATION = 1000
 
 export const useNotificationStore = defineStore('notification', () => {
     const visibleNotifications = ref<Notification[]>([])
@@ -25,6 +25,7 @@ export const useNotificationStore = defineStore('notification', () => {
         if (queue.value.length == 0) return
         const next = queue.value.shift()
         if (!next) return
+        
         visibleNotifications.value.push(next)
         setTimeout(() => remove(id), DEFAULT_DURATION)
     }
