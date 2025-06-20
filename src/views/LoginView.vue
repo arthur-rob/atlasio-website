@@ -25,6 +25,7 @@
                 </BaseButton>
             </BaseForm>
         </BaseCard>
+        <BaseNotification type="warning" class="mt-4"> test </BaseNotification>
     </div>
 </template>
 
@@ -34,6 +35,7 @@ import BaseForm from '@/components/Ui/BaseForm.vue'
 import BaseTextInput from '@/components/Ui/BaseTextInput.vue'
 import BaseButton from '@/components/Ui/BaseButton.vue'
 import BaseCard from '@/components/Ui/BaseCard.vue'
+import BaseNotification from '@/components/Ui/BaseNotification.vue'
 import { emailValidatorRule } from '@/utils/validators'
 const loginFormRef = ref<InstanceType<typeof BaseForm>>(null)
 const loginForm = ref({
