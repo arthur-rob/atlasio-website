@@ -7,11 +7,11 @@ describe('Notification Store', () => {
         setActivePinia(createPinia())
     })
 
-    it('adds a notification to visibleNotifications if less than 3 are visible', () => {
+    it('adds a notification to notificationToDisplay if less than 3 are visible', () => {
         const store = useNotificationStore()
         store.add({ message: 'Test 1' })
-        expect(store.visibleNotifications.length).toBe(1)
-        expect(store.visibleNotifications[0].message).toBe('Test 1')
+        expect(store.notificationToDisplay.length).toBe(1)
+        expect(store.notificationToDisplay[0].message).toBe('Test 1')
     })
 
     it('queues notifications if more than 3 are visible', () => {
@@ -20,37 +20,37 @@ describe('Notification Store', () => {
         store.add({ message: 'Test 2' })
         store.add({ message: 'Test 3' })
         store.add({ message: 'Test 4' })
-        expect(store.visibleNotifications.length).toBe(3)
+        expect(store.notificationToDisplay.length).toBe(3)
         expect(store.queue.length).toBe(1)
         expect(store.queue[0].message).toBe('Test 4')
     })
 
-    it('removes a notification from visibleNotifications', () => {
+    it('removes a notification from notificationToDisplay', () => {
         const store = useNotificationStore()
         store.add({ message: 'Test 1' })
-        const id = store.visibleNotifications[0].id
+        const id = store.notificationToDisplay[0].id
         store.remove(id!)
-        expect(store.visibleNotifications.length).toBe(0)
+        expect(store.notificationToDisplay.length).toBe(0)
     })
 
-    it('moves a queued notification to visibleNotifications when one is removed', () => {
+    it('moves a queued notification to notificationToDisplay when one is removed', () => {
         const store = useNotificationStore()
         store.add({ message: 'Test 1' })
         store.add({ message: 'Test 2' })
         store.add({ message: 'Test 3' })
         store.add({ message: 'Test 4' })
-        const id = store.visibleNotifications[0].id
+        const id = store.notificationToDisplay[0].id
         store.remove(id!)
-        expect(store.visibleNotifications.length).toBe(3)
+        expect(store.notificationToDisplay.length).toBe(3)
         expect(store.queue.length).toBe(0)
-        expect(store.visibleNotifications.some((n) => n.message === 'Test 4')).toBe(true)
+        expect(store.notificationToDisplay.some((n) => n.message === 'Test 4')).toBe(true)
     })
 
     it('does not remove if id is not found', () => {
         const store = useNotificationStore()
         store.add({ message: 'Test 1' })
         store.remove('non-existent-id')
-        expect(store.visibleNotifications.length).toBe(1)
+        expect(store.notificationToDisplay.length).toBe(1)
     })
 
     it('auto-removes notification after DEFAULT_DURATION', async () => {
@@ -58,7 +58,7 @@ describe('Notification Store', () => {
         const store = useNotificationStore()
         store.add({ message: 'Test 1' })
         vi.advanceTimersByTime(5000)
-        expect(store.visibleNotifications.length).toBe(0)
+        expect(store.notificationToDisplay.length).toBe(0)
         vi.useRealTimers()
     })
 })

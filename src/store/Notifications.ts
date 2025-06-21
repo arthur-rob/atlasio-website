@@ -1,37 +1,35 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-const DEFAULT_DURATION = 1000
+const DEFAULT_DURATION = 4000
 
 export const useNotificationStore = defineStore('notification', () => {
-    const visibleNotifications = ref<Notification[]>([])
-    const queue = ref<Notification[]>([])
+    const notificationToDisplay = ref<UiNotification[]>([])
+    const queue = ref<UiNotification[]>([])
 
-    const add = (notification: Notification) => {
-        const id = Math.random().toString(36).substring(2, 15)
-        const notif = { id, ...notification }
-
-        if (visibleNotifications.value.length < 3) {
-            visibleNotifications.value.push(notif)
-            setTimeout(() => remove(id), DEFAULT_DURATION)
-        } else {
-            queue.value.push(notif)
-        }
+    const add = (notification: UiNotification) => {
+        const notif = { id: Math.random().toString(36).substring(2, 15), ...notification }
+        if (notificationToDisplay.value.length < 3) displayNotification(notif)
+        else queue.value.push(notif)
     }
+
     const remove = (id: string) => {
-        const index = visibleNotifications.value.findIndex((n) => n.id === id)
+        const index = notificationToDisplay.value.findIndex((n) => n.id === id)
         if (index === -1) return
-        visibleNotifications.value.splice(index, 1)
+        notificationToDisplay.value.splice(index, 1)
         if (queue.value.length == 0) return
         const next = queue.value.shift()
-        if (!next) return
-        
-        visibleNotifications.value.push(next)
-        setTimeout(() => remove(id), DEFAULT_DURATION)
+        if (next) displayNotification(next)
+    }
+
+    const displayNotification = (notif: UiNotification) => {
+        if (!notif.id) return
+        notificationToDisplay.value.push(notif)
+        setTimeout(() => remove(notif.id), DEFAULT_DURATION)
     }
 
     return {
-        visibleNotifications,
+        notificationToDisplay,
         queue,
         add,
         remove,

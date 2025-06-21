@@ -1,23 +1,29 @@
 <template>
     <div
-        class="base-notification-wrapper border rounded p-8 min-w-64"
-        :class="[
-            {
-                error: type === 'error',
-                success: type === 'success',
-                info: type === 'info',
-                warning: type === 'warning',
-                'bg-red-400': type === 'error',
-                'bg-orange-400': type === 'warning',
-            },
-            backgroundClassName,
-            borderClassName,
-        ]"
+        class="base-notification-wrapper border-2 rounded w-full m-auto shadow-md px-2 py-2 flex items-center justify-start"
+        :class="{
+            'bg-rose-50 border-rose-300 text-rose-800': type === 'error',
+            'bg-amber-50 border-amber-300 text-amber-800': type === 'warning',
+            'bg-sky-50 border-sky-300 text-sky-800': type === 'info',
+            'bg-lime-50 border-lime-300 text-lime-800': type === 'success',
+        }"
     >
-        <div class="icon-aligner flex items-center justify-between">
-            <span class="material-symbols-outlined ml-2 append-icon">{{ icon }}</span>
+        <div class="icon-aligner flex items-center justify-start">
+            <span
+                class="mx-2 append-icon material-symbols-outlined"
+                :class="[
+                    {
+                        'text-rose-600': type === 'error',
+                        'text-amber-600': type === 'warning',
+                        'text-sky-600': type === 'info',
+                        'text-lime-600': type === 'success',
+                    },
+                ]"
+                >{{ icon }}</span
+            >
+
+            <slot></slot>
         </div>
-        <slot></slot>
     </div>
 </template>
 
@@ -33,27 +39,19 @@ const props = withDefaults(
     },
 )
 
-const notificationDisplayOption = ref<Record<NotificationType, NotificationDisplayOption>>({
-    info: {
-        icon: 'info',
-        color: 'blue',
-    },
-    error: {
-        icon: 'error',
-        color: 'red',
-    },
-    success: {
-        icon: 'check_circle',
-        color: 'green',
-    },
-    warning: {
-        icon: 'warning',
-        color: 'yellow',
-    },
+const notificationIcon = ref<Record<NotificationType, string>>({
+    info: 'info',
+    error: 'error',
+    success: 'check_circle',
+    warning: 'warning',
 })
-
-const icon = computed<string>(() => notificationDisplayOption.value[props.type].icon)
-const color = computed(() => notificationDisplayOption.value[props.type].color)
-const backgroundClassName = computed(() => `bg-${color.value}-400`)
-const borderClassName = computed(() => `border-${color.value}-400`)
+const icon = computed<string>(() => notificationIcon.value[props.type])
 </script>
+<style scoped lang="scss">
+.base-notification-wrapper {
+    box-sizing: border-box;
+    .append-icon {
+        font-size: 18px;
+    }
+}
+</style>

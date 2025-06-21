@@ -44,7 +44,8 @@ const loginForm = ref({
 const notificationStore = useNotificationStore()
 
 const handleLogin = async () => {
-    if (!loginFormRef.value?.validate()) return
+    const isFormValid = await loginFormRef.value?.validate()
+    if (isFormValid != true) return
     try {
         // Simulate login API call
         await new Promise((resolve) => setTimeout(resolve, 100))
@@ -55,10 +56,8 @@ const handleLogin = async () => {
     } catch (error) {
         notificationStore.add({
             type: 'error',
-            message: 'Login failed. Please try again.',
+            message: `Login failed. ${error} Please try again.`,
         })
     }
 }
 </script>
-
-<style scoped lang="scss"></style>
