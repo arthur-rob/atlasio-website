@@ -55,7 +55,7 @@ const handleLogin = async () => {
     } catch (error) {
         notificationStore.add({
             type: 'error',
-            message: 'Login failed. Please try again.',
+            message: `Login failed. ${error} Please try again.`,
         })
     }
 }

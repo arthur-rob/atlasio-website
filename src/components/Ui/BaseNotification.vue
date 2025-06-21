@@ -1,6 +1,6 @@
 <template>
     <div
-        class="base-notification-wrapper border rounded p-8 min-w-64"
+        class="base-notification-wrapper border rounded min-w-64"
         :class="[
             {
                 error: type === 'error',
@@ -16,8 +16,9 @@
     >
         <div class="icon-aligner flex items-center justify-between">
             <span class="material-symbols-outlined ml-2 append-icon">{{ icon }}</span>
+
+            <slot></slot>
         </div>
-        <slot></slot>
     </div>
 </template>
 
@@ -57,3 +58,9 @@ const color = computed(() => notificationDisplayOption.value[props.type].color)
 const backgroundClassName = computed(() => `bg-${color.value}-400`)
 const borderClassName = computed(() => `border-${color.value}-400`)
 </script>
+<style scoped>
+.base-notification-wrapper {
+    height: 80px;
+    overflow: hidden;
+}
+</style>

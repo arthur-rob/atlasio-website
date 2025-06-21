@@ -5,7 +5,7 @@ interface NotificationDisplayOption {
     color: string
 }
 
-interface Notification {
+interface UiNotification {
     id?: string
     message: string
     type?: NotificationType
