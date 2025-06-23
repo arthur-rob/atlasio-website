@@ -6,8 +6,6 @@
 <style scoped lang="scss">
 .base-card-wrapper {
     box-sizing: border-box;
-    padding: 10px;
-    margin: 10px;
     border: 1px solid white;
     border-radius: 8px;
 }

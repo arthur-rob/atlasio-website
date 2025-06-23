@@ -54,4 +54,20 @@ describe('BaseTextInput', () => {
         const input = wrapper.find('input')
         expect(input.attributes('disabled')).toBeDefined()
     })
+
+    it('input render correctly errors when validate called', async () => {
+        const wrapper = mount(BaseTextInput, {
+            props: { modelValue: '', rules: [() => 'Error on this field'] },
+            ...GLOBAL_MOUNT_OPTIONS,
+        })
+
+        expect(wrapper.find('.error-message').exists()).toBe(false)
+
+        await wrapper.vm.validate()
+        await wrapper.vm.$nextTick()
+
+        const error = wrapper.find('.error-message')
+        expect(error.exists()).toBe(true)
+        expect(error.text()).toBe('Error on this field')
+    })
 })

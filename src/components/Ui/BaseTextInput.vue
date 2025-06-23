@@ -1,13 +1,13 @@
 <template>
-    <div>
+    <div :class="{ 'input-disabled': disabled }" class="min-h-16 mb-0">
         <input
-            type="text"
-            class="gradient-text-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-white flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base bg-input-background transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+            :type="type"
+            class="gradient-text-input h-10 selection:bg-primary selection:text-primary-foreground border-white flex w-full rounded-md border px-3 py-1 text-base bg-input-background outline-none md:text-sm"
             v-model="model"
             :placeholder="placeholder"
             :disabled="disabled"
         />
-        <p v-if="error" class="text-red-500 text-sm mt-1">{{ error }}</p>
+        <p v-if="error" class="error-message text-red-500 text-sm pl-2">{{ error }}</p>
     </div>
 </template>
 
@@ -22,9 +22,11 @@ const props = withDefaults(
         placeholder?: string
         disabled?: boolean
         rules?: ((value: string) => string | true)[]
+        type?: 'text' | 'password'
     }>(),
     {
         disabled: false,
+        type: 'text',
         rules: () => [],
     },
 )
@@ -52,5 +54,9 @@ onMounted(() => {
 <style scoped lang="scss">
 .gradient-text-input {
     background: linear-gradient(45deg, #fafafa, rgba(255, 255, 255, 0.33));
+}
+.input-disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 </style>
