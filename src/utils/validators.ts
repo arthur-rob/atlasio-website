@@ -5,10 +5,10 @@ export const emailValidator = (email: string): boolean => {
 
 export const emailValidatorRule = (email: string): string | true => {
     if (!email) {
-        return 'Email is required'
+        return 'Email est obligatoire'
     }
     if (!emailValidator(email)) {
-        return 'Invalid email format'
+        return "Votre email n'est pas valide"
     }
     return true
 }

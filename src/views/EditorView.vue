@@ -7,7 +7,6 @@
             <div class="option-form w-1/3">
                 <BaseCard>
                     <h4>Map Filters</h4>
-
                     <BaseAdressAutoComplete @change="selectLocationMap" />
                     <div class="layer-form" v-for="layer in MAP_LAYERS" :key="layer.id">
                         <input
