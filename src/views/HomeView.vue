@@ -1,32 +1,42 @@
 <template>
-    <main class="">
-        <div class="home-cover w-full h-full flex justify-center items-center home-view">
-            <div class="flex justify-between items-center max-w-6xl w-4/5 h-4/5">
-                <div class="py-4 px-4 bg-white rounded-lg shadow-lg max-w-1/2 h-full">
-                    <h1 class="text-4xl font-bold">
-                        Créer vos cartes personnalisées<br />
-                        comme un dessin
-                    </h1>
-                    <p class="mt-2 text-2xl">Select layers and generate SVG maps.</p>
-                    <p class="mt-2 text-2xl">Use the options on the right to customize your map.</p>
-                    <baseForm ref="newsletterForm">
-                        <baseTextInput
-                            v-model="email"
-                            label="Email"
-                            placeholder="Enter your email"
-                            :rules="[emailValidatorRule]"
-                            required
-                        />
-                        <baseButton
-                            class="mt-4 w-full"
-                            :loading="isFormLoading"
-                            appendIcon="send"
-                            @click="handleSubscription"
-                        >
-                            Subscribe to Newsletter
-                        </baseButton>
-                    </baseForm>
-                </div>
+    <main class="home-cover w-full h-full flex justify-center items-center home-view">
+        <div
+            class="flex justify-between items-center max-w-6xl w-4/5 h-4/5 max-width flex-col md:flex-col lg:flex-row"
+        >
+            <div class="py-4 px-4 bg-white rounded-lg w-full lg:w-1/2">
+                <h1 class="base-title font-bold">Dessiner des cartes, à votre image</h1>
+                <p class="mt-2 base-p pb-12">
+                    Un outil simple pour créer et imprimer vos propres cartes topographiques.
+                </p>
+                <p class="mt-2 base-p">
+                    🧭 Tenez le cap : inscrivez-vous à la newsletter pour suivre l'évolution de
+                    l’application et les ajouts à venir.
+                </p>
+                <baseForm ref="newsletterForm" class="flex items-start justify-start gap-4 my-8">
+                    <baseTextInput
+                        class=""
+                        v-model="email"
+                        label="Email"
+                        placeholder="Email"
+                        :rules="[emailValidatorRule]"
+                        required
+                    />
+                    <baseButton
+                        class="mt-1"
+                        :loading="isFormLoading"
+                        appendIcon="send"
+                        @click="handleSubscription"
+                    >
+                        S'inscrire
+                    </baseButton>
+                </baseForm>
+            </div>
+            <div class="w-full lg:w-1/2">
+                <img
+                    src="/img/index/cover_bg.png"
+                    class="w-full"
+                    alt="fond de carte topographique qvec trave de randonée"
+                />
             </div>
         </div>
     </main>
@@ -49,7 +59,7 @@ const handleSubscription = async () => {
     if (isFormValid != true) return
     isFormLoading.value = true
     try {
-        await axios.post('https://atlasio-server-production.up.railway.app/newsletter/subscribe', {
+        await axios.post('https://atlasio-server-production.up.railway.app/newsletter/subscribe/', {
             email: email.value,
         })
 
@@ -70,9 +80,6 @@ const handleSubscription = async () => {
 </script>
 <style scoped lang="scss">
 .home-cover {
-    background-image: url('/src/assets/home/contour.svg');
-    background-size: cover;
-    background-position: center;
     height: 100vh;
 }
 </style>
