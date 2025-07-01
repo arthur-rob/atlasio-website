@@ -2,7 +2,8 @@
     <div :class="{ 'input-disabled': disabled }" class="min-h-16 mb-0">
         <input
             :type="type"
-            class="gradient-text-input h-10 selection:bg-primary selection:text-primary-foreground border-white flex w-full rounded-md border px-3 py-1 text-base bg-input-background outline-none md:text-sm"
+            :label="label"
+            class="h-10 selection:bg-primary selection:text-primary-foreground min-w-64 outline-gray-200 rounded-md focus:outline-4 outline-2 transition-outline duration-200 px-3 py-1 text-base bg-input-background"
             v-model="model"
             :placeholder="placeholder"
             :disabled="disabled"
@@ -22,6 +23,7 @@ const props = withDefaults(
         placeholder?: string
         disabled?: boolean
         rules?: ((value: string) => string | true)[]
+        label?: string
         type?: 'text' | 'password'
     }>(),
     {

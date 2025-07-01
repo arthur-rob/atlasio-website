@@ -15,7 +15,7 @@ body {
     font-family: var(--font-body);
     font-size: var(--font-size-body);
     color: #222;
-    background-color: #fff;
+    background: #ffffff;
     line-height: 1.6;
     margin: 0;
     padding: 0;
@@ -42,4 +42,20 @@ label {
     font-family: var(--font-body);
     font-size: var(--font-size-body);
     font-weight: 400;
+}
+
+#app {
+    background: #fff;
+}
+
+.base-title {
+    font-size: 40px;
+    letter-spacing: 1px;
+    line-height: 48px;
+    font-weight: bold;
+}
+.base-p {
+    font-size: 20px;
+    letter-spacing: 1px;
+    line-height: 28px;
 }

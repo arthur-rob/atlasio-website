@@ -1,6 +1,6 @@
 <template>
     <button
-        class="mx-2 my-4 px-4 py-1 cursor-pointer bg-blue-700 text-white rounded-xl flex items-center"
+        class="px-4 py-1 cursor-pointer bg-blue-700 text-white rounded-xl flex items-center active:outline-blue-400 active:outline-2 transition-outline duration-100"
         :class="{ 'is-loading': loading, disabled: disabled || loading }"
     >
         <span v-if="prependIcon" class="material-symbols-outlined mr-2"> {{ prependIcon }}</span>
