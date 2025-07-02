@@ -48,13 +48,20 @@ label {
     background: #fff;
 }
 
-.base-title {
+.title-main {
     font-size: 40px;
     letter-spacing: 1px;
     line-height: 48px;
     font-weight: bold;
 }
-.base-p {
+.text-title {
+    font-size: 24px;
+    letter-spacing: 1px;
+    line-height: 32px;
+    font-weight: 500;
+}
+
+.text-base {
     font-size: 20px;
     letter-spacing: 1px;
     line-height: 28px;
