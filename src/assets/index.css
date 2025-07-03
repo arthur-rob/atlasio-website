@@ -9,6 +9,15 @@
     /* Balanced, responsive font sizes */
     --font-size-title: clamp(1.5rem, 2.5vw + 0.5rem, 2.5rem);
     --font-size-body: clamp(0.95rem, 1.1vw + 0.3rem, 1.15rem);
+    --base-linear-gradient: linear-gradient(
+        45deg,
+        #00ffea,
+        #3bbecc 20%,
+        #1d8cfd 40%,
+        #fd1d1d 60%,
+        #fca731 80%,
+        #fcda45
+    );
 }
 
 body {
@@ -48,14 +57,38 @@ label {
     background: #fff;
 }
 
-.base-title {
+.title-main {
     font-size: 40px;
     letter-spacing: 1px;
     line-height: 48px;
     font-weight: bold;
 }
-.base-p {
+.text-title {
+    font-size: 24px;
+    letter-spacing: 1px;
+    line-height: 32px;
+    font-weight: 500;
+}
+
+.text-base {
     font-size: 20px;
     letter-spacing: 1px;
     line-height: 28px;
+}
+
+.base-gradient-bg {
+    background: var(--base-linear-gradient);
+}
+.base-gradient-underlined {
+    position: relative;
+}
+.base-gradient-underlined::after {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    content: '';
+    width: 120%;
+    height: 2px;
+    background: var(--base-linear-gradient);
 }

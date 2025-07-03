@@ -4,15 +4,19 @@
             class="flex justify-between items-center max-w-6xl w-4/5 h-4/5 max-width flex-col md:flex-col lg:flex-row"
         >
             <div class="py-4 px-4 bg-white rounded-lg w-full lg:w-1/2">
-                <h1 class="base-title font-bold">Dessiner des cartes, à votre image</h1>
-                <p class="mt-2 base-p pb-12">
+                <h1 class="title-main font-bold">Dessiner des cartes, à votre image</h1>
+                <p class="mt-2 text-base pb-12">
                     Un outil simple pour créer et imprimer vos propres cartes topographiques.
                 </p>
-                <p class="mt-2 base-p">
+                <p class="mt-2 text-base">
                     🧭 Tenez le cap : inscrivez-vous à la newsletter pour suivre l'évolution de
                     l’application et les ajouts à venir.
                 </p>
-                <baseForm ref="newsletterForm" class="flex items-start justify-start gap-4 my-8">
+                <baseForm
+                    ref="newsletterForm"
+                    class="flex items-start justify-start gap-4 my-8"
+                    v-if="!isUserSubscribed"
+                >
                     <baseTextInput
                         class=""
                         v-model="email"
@@ -22,7 +26,6 @@
                         required
                     />
                     <baseButton
-                        class="mt-1"
                         :loading="isFormLoading"
                         appendIcon="send"
                         @click="handleSubscription"
@@ -30,6 +33,9 @@
                         S'inscrire
                     </baseButton>
                 </baseForm>
+                <p class="mt-4 text-title" v-else>
+                    Merci, vous êtes désormais abonné à la newsletter Atlasio !
+                </p>
             </div>
             <div class="w-full lg:w-1/2">
                 <img
@@ -54,6 +60,7 @@ const newsletterForm = ref<InstanceType<typeof BaseForm> | null>(null)
 const email = ref('')
 const isFormLoading = ref(false)
 const notificationStore = useNotificationStore()
+const isUserSubscribed = ref<boolean>(false)
 const handleSubscription = async () => {
     const isFormValid = await newsletterForm.value?.validate()
     if (isFormValid != true) return
@@ -62,7 +69,7 @@ const handleSubscription = async () => {
         await axios.post('https://atlasio-server-production.up.railway.app/newsletter/subscribe/', {
             email: email.value,
         })
-
+        isUserSubscribed.value = true
         notificationStore.add({
             type: 'success',
             message: 'Vous êtes maintenant abonné à la newsletter !',

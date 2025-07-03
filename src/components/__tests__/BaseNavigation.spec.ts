@@ -18,7 +18,6 @@ describe('BaseNavigation', () => {
                 plugins: [router],
             },
         })
-        expect(wrapper.get('#editor').text()).toContain('Editor')
-        expect(wrapper.get('#home').text()).toContain('Home')
+        expect(wrapper.get('#home').text()).toContain('Acceuil')
     })
 })

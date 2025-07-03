@@ -11,6 +11,7 @@
                 </RouterLink>
                 <div class="hidden md:flex items-center space-x-8">
                     <RouterLink
+                        activeClass="base-gradient-underlined"
                         v-for="link in mainLinks"
                         :to="link.to"
                         :key="link.key"
@@ -37,13 +38,8 @@ interface link {
 const mainLinks = ref<link[]>([
     {
         to: '/',
-        label: 'Home',
+        label: 'Acceuil',
         key: 'home',
-    },
-    {
-        to: '/editor',
-        label: 'Editor',
-        key: 'editor',
     },
 ])
 </script>
