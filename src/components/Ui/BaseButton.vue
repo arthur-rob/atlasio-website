@@ -1,13 +1,20 @@
 <template>
+
     <button
-        class="px-4 py-1 cursor-pointer bg-blue-700 text-white rounded h-10 flex items-center active:outline-blue-400 active:outline-2 transition-outline duration-100"
+        class="cursor-pointer flex items-center h-10 base-gradient-bg p-[2px] rounded-md  outline-gray-200 active:outline-2 transition-outline duration-100"
         :class="{ 'is-loading': loading, disabled: disabled || loading }"
     >
-        <span v-if="prependIcon" class="material-symbols-outlined mr-2"> {{ prependIcon }}</span>
-        <slot></slot>
-        <span class="material-symbols-outlined ml-2 append-icon" v-if="loading || appendIcon">{{
-            loading ? 'progress_activity' : appendIcon
-        }}</span>
+    <div
+        class="px-4 py-1 bg-white rounded flex items-center"
+    >
+            <span v-if="prependIcon" class="material-symbols-outlined mr-2">
+                {{ prependIcon }}</span
+            >
+            <slot></slot>
+            <span class="material-symbols-outlined ml-2 append-icon" v-if="loading || appendIcon">{{
+                loading ? 'progress_activity' : appendIcon
+            }}</span>
+        </div>
     </button>
 </template>
 

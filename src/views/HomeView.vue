@@ -12,7 +12,11 @@
                     🧭 Tenez le cap : inscrivez-vous à la newsletter pour suivre l'évolution de
                     l’application et les ajouts à venir.
                 </p>
-                <baseForm ref="newsletterForm" class="flex items-start justify-start gap-4 my-8" v-if="!isUserSubscribed">
+                <baseForm
+                    ref="newsletterForm"
+                    class="flex items-start justify-start gap-4 my-8"
+                    v-if="!isUserSubscribed"
+                >
                     <baseTextInput
                         class=""
                         v-model="email"
@@ -29,7 +33,9 @@
                         S'inscrire
                     </baseButton>
                 </baseForm>
-                <p class="mt-4 text-title" v-else> Merci, vous êtes désormais abonné à la newsletter Atlasio !</p>
+                <p class="mt-4 text-title" v-else>
+                    Merci, vous êtes désormais abonné à la newsletter Atlasio !
+                </p>
             </div>
             <div class="w-full lg:w-1/2">
                 <img
