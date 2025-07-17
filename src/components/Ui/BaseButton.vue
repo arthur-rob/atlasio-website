@@ -1,7 +1,12 @@
 <template>
     <button
-        class="cursor-pointer flex items-center h-10 base-gradient-bg p-[2px] rounded-md outline-gray-200 active:outline-2 transition-outline duration-100 hover:drop-shadow-sm transition-drop-shadow"
-        :class="{ 'is-loading': loading, disabled: disabled || loading }"
+        class="cursor-pointer flex items-center h-10 p-[2px] rounded-md duration-100  transition-drop-shadow"
+        :class="{
+            'is-loading': loading, disabled: disabled || loading,
+            'base-gradient-bg hover:drop-shadow-sm': variant === 'primary',
+            'bg-white': variant === 'plain',
+            'text-gray-500': variant === 'plain',
+         }"
     >
         <div class="px-4 py-1 bg-white rounded h-full flex items-center hover:bg-stone-50 duration-300 transition-colors">
             <span v-if="prependIcon" class="material-symbols-outlined mr-2">
@@ -16,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-type BaseButtonVariant = 'primary' | 'secondary' | 'text' | 'outlined'
+type BaseButtonVariant = 'primary' | 'secondary' | 'text' | 'outlined' | 'plain'
 withDefaults(
     defineProps<{
         prependIcon?: boolean | string

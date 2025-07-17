@@ -6,6 +6,7 @@
     --font-title: 'Karla', sans-serif;
     --font-body: 'Source Sans 3', sans-serif;
 
+    --menu-height: 64px;
     /* Balanced, responsive font sizes */
     --font-size-title: clamp(1.5rem, 2.5vw + 0.5rem, 2.5rem);
     --font-size-body: clamp(0.95rem, 1.1vw + 0.3rem, 1.15rem);
@@ -75,7 +76,11 @@ label {
     letter-spacing: 1px;
     line-height: 28px;
 }
-
+.text-subtitle {
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    line-height: 18px;
+}
 .base-gradient-bg {
     background: var(--base-linear-gradient);
 }

@@ -181,3 +181,29 @@ export const MAP_LAYERS: LayerSpecification[] = [
     }, */
     MAP_TEXT_LAYER,
 ]
+interface MapLayerLabelMapper {
+    label: string
+    layer_keys: string[]
+}
+export const MAP_LAYERS_LABELS: MapLayerLabelMapper[] = [
+    {
+        label: 'Contours',
+        layer_keys: ['contour-lines', 'contours-50m'],
+    },
+    {
+        label: 'Route',
+        layer_keys: ['roads-line-major', 'road-fill'],
+    },
+    {
+        label: 'Immeuble',
+        layer_keys: ['buildings-fill'],
+    },
+    {
+        label: 'Eau',
+        layer_keys: ['water-line'],
+    },
+    {
+        label: 'Limite',
+        layer_keys: ['boundary'],
+    },
+]
