@@ -3,7 +3,7 @@
         <input
             :type="type"
             :label="label"
-            class="h-10 selection:bg-primary selection:text-primary-foreground min-w-64 outline-gray-200 rounded-md focus:outline-4 outline-2 transition-outline duration-200 px-3 py-1 text-base bg-input-background"
+            class="h-10 selection:bg-primary selection:text-primary-foreground min-w-64 w-full outline-gray-200 rounded-md focus:outline-4 outline-2 transition-outline duration-200 px-3 py-1 text-base bg-input-background"
             v-model="model"
             :placeholder="placeholder"
             :disabled="disabled"

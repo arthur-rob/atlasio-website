@@ -1,4 +1,4 @@
-import { type LayerSpecification, type SourceSpecification } from 'maplibre-gl'
+import type { LayerSpecification, SourceSpecification, SymbolLayerSpecification } from 'maplibre-gl'
 
 export const MAP_GLYPHS = `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${import.meta.env.VITE_MAPTILER_API_KEY}`
 
@@ -17,7 +17,7 @@ export const MAP_SOURCES: Record<string, SourceSpecification> = {
     },
 }
 
-const MAP_TEXT_LAYER: LayerSpecification = {
+const MAP_TEXT_LAYER: SymbolLayerSpecification = {
     id: 'roads-text',
     source: 'planet',
     type: 'symbol',

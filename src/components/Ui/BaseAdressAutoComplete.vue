@@ -1,5 +1,5 @@
 <template>
-    <div class="autocomplete my-2">
+    <div class="autocomplete">
         <BaseTextInput
             v-model="query"
             @input="fetchSuggestions"
