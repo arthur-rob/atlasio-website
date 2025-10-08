@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import BaseNotification from '@/components/Ui/BaseNotification.vue'
-import { useNotificationStore } from '@/store/Notifications'
+import { useNotificationStore } from '@/stores/Notifications'
 
 const notificationStore = useNotificationStore()
 </script>

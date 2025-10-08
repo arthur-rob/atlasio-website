@@ -26,19 +26,26 @@
                         </p>
                         <div
                             class="strava bg-orange-600 rounded w-full align-text-center cursor-pointer my-4"
-                            @click="connectStrava"
-                            v-if="!stravaToken"
+                            @click="stravaStore.connect"
+                            v-if="!stravaStore.isLogin"
                         >
                             <p class="text-white text-center pa-2">Se Connecter</p>
                         </div>
-                        <div v-if="stravaActivities.length > 0">
-                            <p class="text-subtitle text-gray-400">Activités</p>
-                            <div v-for="activity in stravaActivities" :key="activity.id" class=" ">
-                                <p>{{ activity.type }}</p>
-                                <div class="flex justify-between items-center">
-                                    <p>{{ displayDate(activity.start_date) }}</p>
-                                    <p>{{ displayAverageSpeed(activity) }}</p>
-                                    <p>{{ Math.round(activity.distance / 1000) }} km</p>
+
+                        <div class="activity-wrapper" v-if="stravaStore.activities.length > 0">
+                            <p class="text-subtitle text-gray-400 py-2">Activités</p>
+                            <div class="max-h-60 overflow-y-auto">
+                                <div
+                                    v-for="activity in stravaStore.activities"
+                                    :key="activity.id"
+                                    class="0 overflow-y-scroll my-2 p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-100"
+                                >
+                                    <p>{{ activity.type }}</p>
+                                    <div class="flex justify-between items-center">
+                                        <p>{{ displayDate(activity.start_date) }}</p>
+                                        <p>{{ displayAverageSpeed(activity) }}</p>
+                                        <p>{{ Math.round(activity.distance / 1000) }} km</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -75,22 +82,20 @@ import BaseButton from '@/components/Ui/BaseButton.vue'
 import BaseCard from '@/components/Ui/BaseCard.vue'
 import BaseDivider from '@/components/Ui/BaseDivider.vue'
 import MapFilter from '@/components/MapFilter.vue'
-import { ref, computed, onMounted, watch } from 'vue'
 import EditorLayout from '@/layouts/EditorLayout.vue'
+import BaseAdressAutoComplete from '@/components/Ui/BaseAdressAutoComplete.vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useMap } from '@/composables/Map'
 import { useSvgExport, type queryFeatures } from '@/composables/SvgExport'
 import { MAP_LAYERS, MAP_LAYERS_LABELS } from '@/constants/map'
-import BaseAdressAutoComplete from '@/components/Ui/BaseAdressAutoComplete.vue'
-import axios from 'axios'
-import type { AddressFeature } from '@/types/map'
 import type { FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl'
+import { useStravaStore } from '@/stores/Strava'
 
 const map = useMap()
-const stravaToken = ref(localStorage.getItem('strava_token'))
-const stravaActivities = ref([])
 const svg = useSvgExport()
 const isMapLoaded = ref(false)
 const stepIndex = ref(1)
+const stravaStore = useStravaStore()
 const selectedLayer = ref<string[]>(
     MAP_LAYERS.filter((el) => el.layout?.visibility !== 'none').map((el) => el.id),
 )
@@ -114,25 +119,6 @@ const selectLocationMap = (place: AddressFeature) => {
     stepIndex.value = 2
 }
 
-const connectStrava = async () => {
-    const popup = window.open(
-        `${import.meta.env.VITE_API_BASE_URL}/strava/auth`,
-        'stravaAuth',
-        'width=500,height=600',
-    )
-
-    window.addEventListener('message', (event) => {
-        if (event.origin !== 'http://localhost:3000') return // sécurité
-
-        const token = event.data?.token
-        if (token) {
-            // Utiliser le token pour récupérer les activités
-            localStorage.removeItem('strava_token')
-            localStorage.setItem('strava_token', token)
-            fetchActivities(token)
-        }
-    })
-}
 const displayDate = (date: string) => {
     return new Date(date).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -140,17 +126,12 @@ const displayDate = (date: string) => {
         year: 'numeric',
     })
 }
+
 const displayAverageSpeed = (activity: StravaActivity) => {
     const averageTimePerKm = Math.round(1000 / activity.average_speed)
     const averageMinPerKm = Math.floor(averageTimePerKm / 60)
     const averageSecPerKm = averageTimePerKm % 60
     return `${averageMinPerKm}:${averageSecPerKm} min/km`
-}
-const fetchActivities = async (token: string) => {
-    const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/strava/activities`, {
-        params: { token },
-    })
-    stravaActivities.value = data
 }
 
 watch(selectedLayer, (value) => {
@@ -167,7 +148,7 @@ onMounted(async () => {
         'basic',
     ) */
 
-    if (stravaToken.value) fetchActivities(stravaToken.value)
+    if (stravaStore.isLogin) stravaStore.fetchActivities()
     isMapLoaded.value = true
 })
 </script>

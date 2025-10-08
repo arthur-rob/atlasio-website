@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, provide, defineExpose } from 'vue'
+import { reactive, provide } from 'vue'
 
 type Field = {
     validate: () => boolean
