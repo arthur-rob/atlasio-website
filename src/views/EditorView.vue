@@ -86,7 +86,7 @@ import EditorLayout from '@/layouts/EditorLayout.vue'
 import BaseAdressAutoComplete from '@/components/Ui/BaseAdressAutoComplete.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useMap } from '@/composables/Map'
-import { useSvgExport, type queryFeatures } from '@/composables/SvgExport'
+import { useSvgExport, type QueryFeatures } from '@/composables/SvgExport'
 import { MAP_LAYERS, MAP_LAYERS_LABELS } from '@/constants/map'
 import type { FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl'
 import { useStravaStore } from '@/stores/Strava'
@@ -100,7 +100,7 @@ const selectedLayer = ref<string[]>(
     MAP_LAYERS.filter((el) => el.layout?.visibility !== 'none').map((el) => el.id),
 )
 
-const queryFeatures = computed<queryFeatures[]>(() => {
+const queryFeatures = computed<QueryFeatures[]>(() => {
     return selectedLayer.value
         .map((layerId) => {
             const layer = MAP_LAYERS.find((el) => el.id === layerId)
@@ -109,9 +109,9 @@ const queryFeatures = computed<queryFeatures[]>(() => {
                 tiles: (layer as FillLayerSpecification | LineLayerSpecification).source,
                 source: (layer as FillLayerSpecification | LineLayerSpecification)['source-layer'],
                 filter: (layer as FillLayerSpecification | LineLayerSpecification).filter,
-            }
+            } as Record<string, string | undefined>
         })
-        .filter((f): f is any => !!f)
+        .filter((f) => !!f)
 })
 
 const selectLocationMap = (place: AddressFeature) => {
