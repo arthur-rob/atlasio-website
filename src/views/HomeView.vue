@@ -54,7 +54,7 @@ import BaseTextInput from '@/components/Ui/BaseTextInput.vue'
 import axios from 'axios'
 import { emailValidatorRule } from '@/utils/validators'
 import { ref } from 'vue'
-import { useNotificationStore } from '@/store/Notifications'
+import { useNotificationStore } from '@/stores/Notifications'
 
 const newsletterForm = ref<InstanceType<typeof BaseForm> | null>(null)
 const email = ref('')

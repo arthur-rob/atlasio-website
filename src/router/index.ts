@@ -12,7 +12,7 @@ const router = createRouter({
             component: HomeView,
         },
         {
-            path: '/editor/:preset?',
+            path: '/editor',
             name: 'editor',
             component: EditorView,
         },

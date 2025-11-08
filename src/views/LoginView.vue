@@ -34,7 +34,7 @@ import BaseForm from '@/components/Ui/BaseForm.vue'
 import BaseTextInput from '@/components/Ui/BaseTextInput.vue'
 import BaseButton from '@/components/Ui/BaseButton.vue'
 import BaseCard from '@/components/Ui/BaseCard.vue'
-import { useNotificationStore } from '@/store/Notifications'
+import { useNotificationStore } from '@/stores/Notifications'
 import { emailValidatorRule } from '@/utils/validators'
 const loginFormRef = ref<InstanceType<typeof BaseForm>>()
 const loginForm = ref({

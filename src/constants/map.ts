@@ -1,4 +1,4 @@
-import { type LayerSpecification, type SourceSpecification } from 'maplibre-gl'
+import type { LayerSpecification, SourceSpecification, SymbolLayerSpecification } from 'maplibre-gl'
 
 export const MAP_GLYPHS = `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${import.meta.env.VITE_MAPTILER_API_KEY}`
 
@@ -17,7 +17,7 @@ export const MAP_SOURCES: Record<string, SourceSpecification> = {
     },
 }
 
-const MAP_TEXT_LAYER: LayerSpecification = {
+const MAP_TEXT_LAYER: SymbolLayerSpecification = {
     id: 'roads-text',
     source: 'planet',
     type: 'symbol',
@@ -180,4 +180,30 @@ export const MAP_LAYERS: LayerSpecification[] = [
         },
     }, */
     MAP_TEXT_LAYER,
+]
+interface MapLayerLabelMapper {
+    label: string
+    layer_keys: string[]
+}
+export const MAP_LAYERS_LABELS: MapLayerLabelMapper[] = [
+    {
+        label: 'Contours',
+        layer_keys: ['contour-lines', 'contours-50m'],
+    },
+    {
+        label: 'Route',
+        layer_keys: ['roads-line-major', 'road-fill'],
+    },
+    {
+        label: 'Immeuble',
+        layer_keys: ['buildings-fill'],
+    },
+    {
+        label: 'Eau',
+        layer_keys: ['water-line'],
+    },
+    {
+        label: 'Limite',
+        layer_keys: ['boundary'],
+    },
 ]

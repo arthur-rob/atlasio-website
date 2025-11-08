@@ -1,7 +1,7 @@
 import type { GeoJSONFeature, FilterSpecification } from 'maplibre-gl'
 import { useMap } from './Map'
 
-export interface queryFeatures {
+export interface QueryFeatures {
     tiles: string
     source: string
     filter?: FilterSpecification
@@ -13,7 +13,7 @@ let svgGroupElement = document.createElementNS(svgNS, 'g')
 
 export function useSvgExport() {
     const { map } = useMap()
-    const exportSvg = (queryFeatures: queryFeatures[]) => {
+    const exportSvg = (queryFeatures: QueryFeatures[]) => {
         if (!map.value) {
             console.warn('map is undefined')
             return
