@@ -1,6 +1,8 @@
 <template>
     <div
         class="divider-container"
+        role="separator"
+        :aria-orientation="orientation"
         :class="{ horizontal: orientation === 'horizontal', vertical: orientation === 'vertical' }"
     ></div>
 </template>
@@ -15,7 +17,8 @@ withDefaults(defineProps<Props>(), {
 </script>
 <style scoped lang="scss">
 .divider-container {
-    background-color: var(--color-gray-200);
+    flex-shrink: 0;
+    background-color: var(--ui-border-color);
     &.horizontal {
         width: 100%;
         height: 1px;

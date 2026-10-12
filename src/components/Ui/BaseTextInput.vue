@@ -1,14 +1,20 @@
 <template>
-    <div :class="{ 'input-disabled': disabled }" class="min-h-16 mb-0">
+    <div
+        :class="{ 'input-disabled': disabled, 'pb-5': rules.length }"
+        class="base-text-input relative w-full"
+    >
+        <label v-if="label" :for="componentId" class="input-label">{{ label }}</label>
         <input
+            :id="componentId"
             :type="type"
-            :label="label"
-            class="h-10 selection:bg-primary selection:text-primary-foreground min-w-64 w-full outline-gray-200 rounded-md focus:outline-4 outline-2 transition-outline duration-200 px-3 py-1 text-base bg-input-background"
+            class="input-field ui-border w-full"
+            :class="{ 'has-error': error }"
             v-model="model"
             :placeholder="placeholder"
             :disabled="disabled"
+            :aria-invalid="!!error || undefined"
         />
-        <p v-if="error" class="error-message text-red-500 text-sm pl-2">{{ error }}</p>
+        <p v-if="error" class="error-message absolute left-0 bottom-0">{{ error }}</p>
     </div>
 </template>
 
@@ -57,9 +63,55 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.gradient-text-input {
-    background: linear-gradient(45deg, #fafafa, rgba(255, 255, 255, 0.33));
+.input-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ui-text);
 }
+
+.input-field {
+    height: var(--ui-height);
+    padding: 0 0.75rem;
+    border-radius: var(--ui-radius);
+    font-size: var(--ui-font-size);
+    color: var(--ui-text);
+    outline: none;
+
+    &::placeholder {
+        color: var(--color-gray-400);
+    }
+    &::selection {
+        background: rgb(29 140 253 / 0.2);
+    }
+    &:hover {
+        --ui-border-color: var(--ui-border-color-hover);
+    }
+    &:focus {
+        background:
+            linear-gradient(var(--ui-surface), var(--ui-surface)) padding-box,
+            var(--base-linear-gradient) border-box;
+        box-shadow: var(--ui-focus-ring);
+    }
+    &.has-error {
+        background:
+            linear-gradient(var(--ui-surface), var(--ui-surface)) padding-box,
+            linear-gradient(var(--color-rose-300), var(--color-rose-300)) border-box;
+    }
+    &.has-error:focus {
+        box-shadow: 0 0 0 4px rgb(244 63 94 / 0.12);
+    }
+}
+
+.error-message {
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    color: var(--color-rose-600);
+    margin: 0;
+    padding-left: 0.25rem;
+}
+
 .input-disabled {
     opacity: 0.5;
     pointer-events: none;
