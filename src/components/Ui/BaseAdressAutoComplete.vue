@@ -1,5 +1,5 @@
 <template>
-    <div class="autocomplete my-2">
+    <div class="autocomplete">
         <BaseTextInput
             v-model="query"
             @input="fetchSuggestions"
@@ -9,10 +9,12 @@
             placeholder="Enter address..."
         />
 
-        <ul v-if="suggestions.length" class="suggestions">
+        <ul v-if="suggestions.length" class="suggestions" role="listbox">
             <li
                 v-for="(suggestion, index) in suggestions"
                 :key="suggestion.id"
+                role="option"
+                :aria-selected="index === activeIndex"
                 :class="{ active: index === activeIndex }"
                 @mousedown.prevent="selectSuggestion(index)"
             >
@@ -90,32 +92,37 @@ function selectSuggestion(index) {
 <style scoped>
 .autocomplete {
     position: relative;
-    width: 300px;
-}
-input {
     width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
 }
 .suggestions {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    background: white;
-    border: 1px solid #ccc;
-    border-top: none;
-    max-height: 200px;
-    overflow-y: auto;
     position: absolute;
-    width: 100%;
+    top: calc(100% + 0.25rem);
+    left: 0;
     z-index: 10;
+    width: 100%;
+    max-height: 15rem;
+    margin: 0;
+    padding: 0.25rem;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border-color);
+    border-radius: var(--ui-radius);
+    box-shadow:
+        0 10px 25px -10px rgb(0 0 0 / 0.15),
+        0 2px 6px -2px rgb(0 0 0 / 0.06);
 }
 .suggestions li {
-    padding: 8px;
+    padding: 0.5rem 0.75rem;
+    border-radius: calc(var(--ui-radius) - 0.25rem);
+    font-size: var(--ui-font-size);
+    line-height: 1.35;
+    color: var(--ui-text);
     cursor: pointer;
+    transition: background-color 100ms ease;
 }
 .suggestions li.active,
 .suggestions li:hover {
-    background-color: #f0f0f0;
+    background-color: var(--color-gray-100);
 }
 </style>

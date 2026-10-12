@@ -41,5 +41,10 @@ const mainLinks = ref<link[]>([
         label: 'Acceuil',
         key: 'home',
     },
+    {
+        to: '/editor',
+        label: 'Create',
+        key: 'editor',
+    },
 ])
 </script>
