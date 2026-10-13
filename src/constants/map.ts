@@ -2,6 +2,18 @@ import type { LayerSpecification, SourceSpecification, SymbolLayerSpecification 
 
 export const MAP_GLYPHS = `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${import.meta.env.VITE_MAPTILER_API_KEY}`
 
+export const FOREST_COLOR = '#4caf50'
+export const TRAIL_COLOR = '#e65100'
+// Dash and gap length in pixels, same on the map (1px line) and in the export
+const TRAIL_DASH = [3, 3]
+export const SUMMIT_COLOR = '#795548'
+export const SUMMIT_ICON_ID = 'summit-triangle'
+// Triangle width in pixels, same on the map and in the export
+export const SUMMIT_SIZE = 10
+export const FOREST_LAYER_ID = 'forest'
+// GeoJSON source and line layer holding the forest hatch lines computed on the map
+export const FOREST_HATCH_ID = 'forest-hatch'
+
 export const MAP_SOURCES: Record<string, SourceSpecification> = {
     basic: {
         type: 'vector',
@@ -15,6 +27,21 @@ export const MAP_SOURCES: Record<string, SourceSpecification> = {
         type: 'vector',
         url: `https://api.maptiler.com/tiles/v3/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
     },
+    [FOREST_HATCH_ID]: {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+    },
+}
+
+// Read by the SVG export through the layer `metadata` field
+export interface LayerExportStyle {
+    stroke?: string
+    hatch?: boolean
+    // SVG stroke-dasharray
+    dash?: string
+    // Point features drawn as a triangle, with their name and elevation when `label` is set
+    marker?: 'triangle'
+    label?: boolean
 }
 
 const MAP_TEXT_LAYER: SymbolLayerSpecification = {
@@ -37,6 +64,27 @@ const MAP_TEXT_LAYER: SymbolLayerSpecification = {
 }
 
 export const MAP_LAYERS: LayerSpecification[] = [
+    {
+        // Invisible: only defines the forest features, drawn by the hatch layer below and the export
+        id: FOREST_LAYER_ID,
+        type: 'fill',
+        source: 'planet',
+        'source-layer': 'landcover',
+        filter: ['==', ['get', 'class'], 'wood'],
+        paint: {
+            'fill-opacity': 0,
+        },
+        metadata: { export: { stroke: FOREST_COLOR, hatch: true } satisfies LayerExportStyle },
+    },
+    {
+        id: FOREST_HATCH_ID,
+        type: 'line',
+        source: FOREST_HATCH_ID,
+        paint: {
+            'line-color': FOREST_COLOR,
+            'line-width': 1,
+        },
+    },
     {
         id: 'buildings-fill',
         source: 'planet',
@@ -120,6 +168,25 @@ export const MAP_LAYERS: LayerSpecification[] = [
         },
     },
     {
+        id: 'hiking-trails',
+        type: 'line',
+        source: 'planet',
+        'source-layer': 'transportation',
+        filter: [
+            'all',
+            ['==', ['get', 'class'], 'path'],
+            ['in', ['get', 'subclass'], ['literal', ['path', 'footway', 'bridleway', 'steps']]],
+        ],
+        paint: {
+            'line-color': TRAIL_COLOR,
+            'line-width': 1,
+            'line-dasharray': TRAIL_DASH,
+        },
+        metadata: {
+            export: { stroke: TRAIL_COLOR, dash: TRAIL_DASH.join(' ') } satisfies LayerExportStyle,
+        },
+    },
+    {
         id: 'water-line',
         type: 'line',
         source: 'planet',
@@ -179,6 +246,43 @@ export const MAP_LAYERS: LayerSpecification[] = [
             'line-width': 1,
         },
     }, */
+    {
+        id: 'summits',
+        type: 'symbol',
+        source: 'planet',
+        'source-layer': 'mountain_peak',
+        filter: ['in', ['get', 'class'], ['literal', ['peak', 'volcano']]],
+        layout: {
+            'icon-image': SUMMIT_ICON_ID,
+            'icon-allow-overlap': true,
+            'text-field': [
+                'format',
+                ['coalesce', ['get', 'name'], ''],
+                {},
+                '\n',
+                {},
+                ['case', ['has', 'ele'], ['concat', ['to-string', ['get', 'ele']], ' m'], ''],
+                { 'font-scale': 0.85 },
+            ],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 11,
+            'text-anchor': 'top',
+            'text-offset': [0, 0.7],
+            'text-optional': true,
+        },
+        paint: {
+            'text-color': SUMMIT_COLOR,
+            'text-halo-color': '#fff',
+            'text-halo-width': 1,
+        },
+        metadata: {
+            export: {
+                stroke: SUMMIT_COLOR,
+                marker: 'triangle',
+                label: true,
+            } satisfies LayerExportStyle,
+        },
+    },
     MAP_TEXT_LAYER,
 ]
 interface MapLayerLabelMapper {
@@ -195,8 +299,20 @@ export const MAP_LAYERS_LABELS: MapLayerLabelMapper[] = [
         layer_keys: ['roads-line-major', 'road-fill'],
     },
     {
+        label: 'Sentiers',
+        layer_keys: ['hiking-trails'],
+    },
+    {
+        label: 'Sommets',
+        layer_keys: ['summits'],
+    },
+    {
         label: 'Immeuble',
         layer_keys: ['buildings-fill'],
+    },
+    {
+        label: 'Forêt',
+        layer_keys: [FOREST_LAYER_ID, FOREST_HATCH_ID],
     },
     {
         label: 'Eau',
