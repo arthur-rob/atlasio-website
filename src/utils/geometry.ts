@@ -98,8 +98,21 @@ const clipSegment = (p0: Point, p1: Point, b: Bounds): [Point, Point] | null => 
     return [t0 === 0 ? p0 : lerp(p0, p1, t0), t1 === 1 ? p1 : lerp(p0, p1, t1)]
 }
 
-// Clips a polyline to bounds, splitting it into several runs when it leaves and re-enters
+// Clips a polyline to bounds, splitting it into several runs when it leaves and re-enters.
+// A closed line keeps its start and end runs joined, so it is cut only where it leaves the bounds.
 export const clipPolyline = (points: Point[], b: Bounds): Point[][] => {
+    const runs = clipOpenPolyline(points, b)
+    const first = points[0]!
+    const last = points[points.length - 1]!
+    const isClosed = points.length > 3 && first.x === last.x && first.y === last.y
+    if (!isClosed || runs.length < 2) return runs
+    const startRun = runs[0]!
+    const endRun = runs[runs.length - 1]!
+    if (startRun[0] !== first || endRun[endRun.length - 1] !== last) return runs
+    return [[...endRun, ...startRun.slice(1)], ...runs.slice(1, -1)]
+}
+
+const clipOpenPolyline = (points: Point[], b: Bounds): Point[][] => {
     const runs: Point[][] = []
     let current: Point[] = []
     for (let i = 0; i < points.length - 1; i++) {
@@ -156,12 +169,241 @@ export const roundedRect = (b: Bounds, radius: number, cornerSteps = 4): ConvexS
             return { x: x + r * Math.cos(angle), y: y + r * Math.sin(angle) }
         }),
     )
-    // Vertices go clockwise on screen (y down), so (dy, -dx) points outwards
+    return convexPolygon(vertices)
+}
+
+// Convex polygon from its vertices, in any winding order
+export const convexPolygon = (vertices: Point[]): ConvexShape => {
+    const center = {
+        x: vertices.reduce((sum, p) => sum + p.x, 0) / vertices.length,
+        y: vertices.reduce((sum, p) => sum + p.y, 0) / vertices.length,
+    }
     const edges = vertices.map((point, i) => {
         const next = vertices[(i + 1) % vertices.length]!
-        return { point, normal: { x: next.y - point.y, y: point.x - next.x } }
+        const normal = { x: next.y - point.y, y: point.x - next.x }
+        // Flip normals pointing towards the centre so they all point outwards
+        const inwards = normal.x * (center.x - point.x) + normal.y * (center.y - point.y) > 0
+        return { point, normal: inwards ? { x: -normal.x, y: -normal.y } : normal }
     })
-    return { bounds: b, edges }
+    return { bounds: boundsOf(vertices), edges }
+}
+
+// Grid of shapes, to only test the few shapes near a segment
+export class ShapeIndex {
+    private cells = new Map<string, ConvexShape[]>()
+
+    constructor(private cellSize = 32) {}
+
+    private forEachCell(b: Bounds, callback: (key: string) => void) {
+        for (
+            let x = Math.floor(b.minX / this.cellSize);
+            x <= Math.floor(b.maxX / this.cellSize);
+            x++
+        ) {
+            for (
+                let y = Math.floor(b.minY / this.cellSize);
+                y <= Math.floor(b.maxY / this.cellSize);
+                y++
+            ) {
+                callback(`${x},${y}`)
+            }
+        }
+    }
+
+    add(shape: ConvexShape) {
+        this.forEachCell(shape.bounds, (key) => {
+            const cell = this.cells.get(key) ?? []
+            this.cells.set(key, cell)
+            cell.push(shape)
+        })
+    }
+
+    query(b: Bounds): ConvexShape[] {
+        const found = new Set<ConvexShape>()
+        this.forEachCell(b, (key) =>
+            this.cells.get(key)?.forEach((shape) => {
+                if (overlaps(shape.bounds, b)) found.add(shape)
+            }),
+        )
+        return [...found]
+    }
+}
+
+// Area covered by a line of half width `halfWidth`: one rectangle per segment, one disc per vertex
+export const lineBody = (points: Point[], halfWidth: number, discSteps = 8): ConvexShape[] => {
+    const shapes: ConvexShape[] = []
+    points.forEach((p, i) => {
+        shapes.push(
+            convexPolygon(
+                Array.from({ length: discSteps }, (_, k) => {
+                    const angle = (k / discSteps) * Math.PI * 2
+                    return {
+                        x: p.x + halfWidth * Math.cos(angle),
+                        y: p.y + halfWidth * Math.sin(angle),
+                    }
+                }),
+            ),
+        )
+        const next = points[i + 1]
+        if (!next) return
+        const length = distance(p, next)
+        if (length === 0) return
+        const nx = (-(next.y - p.y) / length) * halfWidth
+        const ny = ((next.x - p.x) / length) * halfWidth
+        shapes.push(
+            convexPolygon([
+                { x: p.x + nx, y: p.y + ny },
+                { x: next.x + nx, y: next.y + ny },
+                { x: next.x - nx, y: next.y - ny },
+                { x: p.x - nx, y: p.y - ny },
+            ]),
+        )
+    })
+    return shapes
+}
+
+// Parallel line at `offset` pixels on the left (negative: right), with mitred corners.
+// Closed lines (first point = last point) get a corner at their start too, so they stay closed.
+export const offsetPolyline = (input: Point[], offset: number): Point[] => {
+    const points = input.filter((p, i) => i === 0 || distance(p, input[i - 1]!) > 0)
+    if (points.length < 2) return []
+    const normals = points.slice(1).map((next, i) => {
+        const p = points[i]!
+        const length = distance(p, next)
+        return { x: -(next.y - p.y) / length, y: (next.x - p.x) / length }
+    })
+    const shift = (p: Point, n: Point, scale = 1) => ({
+        x: p.x + n.x * offset * scale,
+        y: p.y + n.y * offset * scale,
+    })
+    const corner = (p: Point, before: Point, after: Point): Point[] => {
+        const miter = { x: before.x + after.x, y: before.y + after.y }
+        const length = Math.hypot(miter.x, miter.y)
+        const cos = length / 2
+        // Very sharp turn: bevel instead of a long spike
+        if (cos < 0.35) return [shift(p, before), shift(p, after)]
+        return [shift(p, { x: miter.x / length, y: miter.y / length }, 1 / cos)]
+    }
+    const inner = points.slice(1, -1).flatMap((p, i) => corner(p, normals[i]!, normals[i + 1]!))
+    const isClosed = points.length > 3 && distance(points[0]!, points[points.length - 1]!) < 1e-6
+    if (isClosed) {
+        const start = corner(points[0]!, normals[normals.length - 1]!, normals[0]!)
+        return [start[start.length - 1]!, ...inner, ...start]
+    }
+    return [
+        shift(points[0]!, normals[0]!),
+        ...inner,
+        shift(points[points.length - 1]!, normals[normals.length - 1]!),
+    ]
+}
+
+// Crossing point of segments [a, b] and [c, d], if they cross
+const segmentIntersection = (a: Point, b: Point, c: Point, d: Point): Point | undefined => {
+    const r = { x: b.x - a.x, y: b.y - a.y }
+    const s = { x: d.x - c.x, y: d.y - c.y }
+    const denominator = r.x * s.y - r.y * s.x
+    if (denominator === 0) return undefined
+    const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / denominator
+    const u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / denominator
+    if (t < 0 || t > 1 || u < 0 || u > 1) return undefined
+    return lerp(a, b, t)
+}
+
+// Joins lines whose ends are within `tolerance` pixels into one continuous line, when exactly two
+// line ends meet there (a junction of three lines or more is left as is). Lines may be reversed.
+export const mergeConnectedLines = (lines: Point[][], tolerance: number): Point[][] => {
+    interface End {
+        line: number
+        atStart: boolean
+        point: Point
+    }
+    const cell = (p: Point) => [Math.floor(p.x / tolerance), Math.floor(p.y / tolerance)] as const
+    const grid = new Map<string, End[]>()
+    lines.forEach((line, index) => {
+        if (line.length < 2) return
+        ;[true, false].forEach((atStart) => {
+            const point = atStart ? line[0]! : line[line.length - 1]!
+            const key = cell(point).join()
+            grid.set(key, [...(grid.get(key) ?? []), { line: index, atStart, point }])
+        })
+    })
+    const near = (end: End): End[] => {
+        const [cx, cy] = cell(end.point)
+        const found: End[] = []
+        for (let x = cx - 1; x <= cx + 1; x++) {
+            for (let y = cy - 1; y <= cy + 1; y++) {
+                grid.get(`${x},${y}`)?.forEach((other) => {
+                    const isSelf = other.line === end.line && other.atStart === end.atStart
+                    if (!isSelf && distance(other.point, end.point) <= tolerance) found.push(other)
+                })
+            }
+        }
+        return found
+    }
+    // The single end meeting `end`, if the two of them are alone at that point
+    const partnerOf = (end: End): End | undefined => {
+        const candidates = near(end)
+        if (candidates.length !== 1) return undefined
+        return near(candidates[0]!).length === 1 ? candidates[0] : undefined
+    }
+    const endOf = (line: number, atStart: boolean): End => {
+        const points = lines[line]!
+        return { line, atStart, point: atStart ? points[0]! : points[points.length - 1]! }
+    }
+
+    const used = new Set<number>()
+    // Follows the chain from its tail, appending the connected lines; returns the final tail
+    const extend = (chain: Point[], tail: End): End => {
+        for (;;) {
+            const next = partnerOf(tail)
+            if (!next || used.has(next.line)) return tail
+            used.add(next.line)
+            const points = next.atStart ? lines[next.line]! : [...lines[next.line]!].reverse()
+            const last = chain[chain.length - 1]!
+            // Ends overshooting each other (road edges at a corner) would draw a small loop:
+            // cut both lines where they cross instead
+            const crossing =
+                chain.length > 1 && points.length > 1
+                    ? segmentIntersection(chain[chain.length - 2]!, last, points[0]!, points[1]!)
+                    : undefined
+            if (crossing) {
+                chain[chain.length - 1] = crossing
+                chain.push(...points.slice(1))
+            } else {
+                // Same point twice when both lines share it; otherwise keep both to draw the corner
+                chain.push(...points.slice(distance(last, points[0]!) < 1e-3 ? 1 : 0))
+            }
+            tail = endOf(next.line, !next.atStart)
+        }
+    }
+
+    const merged: Point[][] = []
+    lines.forEach((line, index) => {
+        if (used.has(index) || line.length < 2) return
+        used.add(index)
+        const chain = [...line]
+        const head = extend(chain, endOf(index, false))
+        chain.reverse()
+        const tail = extend(chain, endOf(index, true))
+        // Both ends of the chain meet: close the loop
+        const closing = partnerOf(tail)
+        if (closing?.line === head.line && closing.atStart === head.atStart) {
+            const n = chain.length
+            const crossing =
+                n > 3
+                    ? segmentIntersection(chain[n - 2]!, chain[n - 1]!, chain[0]!, chain[1]!)
+                    : undefined
+            if (crossing) {
+                // Overshooting ends: close the loop at their crossing point
+                chain[0] = crossing
+                chain[n - 1] = crossing
+            } else {
+                chain.push(chain[0]!)
+            }
+        }
+        merged.push(chain)
+    })
+    return merged
 }
 
 // Cyrus–Beck: parameter range [t0, t1] of segment [p0, p1] inside a convex shape, or null
@@ -184,18 +426,15 @@ const shapeInterval = (p0: Point, p1: Point, shape: ConvexShape): [number, numbe
     return [t0, t1]
 }
 
-// Cuts the parts of a polyline inside any of the shapes, splitting it into visible runs
-export const removeShapes = (points: Point[], shapes: ConvexShape[]): Point[][] => {
-    const lineBounds = boundsOf(points)
-    const hits = shapes.filter((shape) => overlaps(shape.bounds, lineBounds))
-    if (!hits.length) return [points]
-
+// Cuts the parts of a polyline inside any of the indexed shapes, splitting it into visible runs
+export const removeShapes = (points: Point[], index: ShapeIndex): Point[][] => {
     const runs: Point[][] = []
     let current: Point[] = [points[0]!]
     for (let i = 0; i < points.length - 1; i++) {
         const a = points[i]!
         const b = points[i + 1]!
-        const hidden = hits
+        const hidden = index
+            .query(boundsOf([a, b]))
             .map((shape) => shapeInterval(a, b, shape))
             .filter(
                 (interval): interval is [number, number] => !!interval && interval[1] > interval[0],

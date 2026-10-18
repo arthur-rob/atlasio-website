@@ -3,8 +3,8 @@ import {
     MAP_LAYERS,
     MAP_SOURCES,
     MAP_GLYPHS,
-    FOREST_LAYER_ID,
-    FOREST_HATCH_ID,
+    HATCH_LAYERS,
+    type LayerExportStyle,
     SUMMIT_COLOR,
     SUMMIT_ICON_ID,
     SUMMIT_SIZE,
@@ -16,32 +16,39 @@ import maplibregl, {
     type MapOptions,
 } from 'maplibre-gl'
 import { tileToLngLat, trianglePoints } from '@/utils/geometry'
-import { hatchFeatures } from '@/utils/hatch'
+import { hatchFeatures, mercatorViewBounds } from '@/utils/hatch'
 
 const map = ref<Map | null>(null)
 
-// Recomputes the forest hatch lines for the current view, so their screen spacing stays constant
-const updateForestHatch = () => {
-    const source = map.value?.getSource<GeoJSONSource>(FOREST_HATCH_ID)
-    if (!map.value || !source) return
-    if (map.value.getLayoutProperty(FOREST_HATCH_ID, 'visibility') === 'none') return
-    const forest = MAP_LAYERS.find((el) => el.id === FOREST_LAYER_ID) as FillLayerSpecification
-    const features = map.value.querySourceFeatures(forest.source, {
-        sourceLayer: forest['source-layer'],
-        filter: forest.filter,
-    })
-    const lines = hatchFeatures(features, map.value.getZoom()).flatMap(({ tile, segments }) =>
-        segments.map((segment) => segment.map((p) => tileToLngLat(tile, p).toArray())),
-    )
-    source.setData({
-        type: 'FeatureCollection',
-        features: [
-            {
-                type: 'Feature',
-                properties: {},
-                geometry: { type: 'MultiLineString', coordinates: lines },
-            },
-        ],
+// Recomputes the hatch lines for the current view, so their screen spacing stays constant
+const updateHatches = () => {
+    if (!map.value) return
+    const view = mercatorViewBounds(map.value)
+    HATCH_LAYERS.forEach(({ layerId, hatchId }) => {
+        const source = map.value?.getSource<GeoJSONSource>(hatchId)
+        if (!map.value || !source) return
+        if (map.value.getLayoutProperty(hatchId, 'visibility') === 'none') return
+        const layer = MAP_LAYERS.find((el) => el.id === layerId) as FillLayerSpecification
+        const style = (layer.metadata as { export?: LayerExportStyle } | undefined)?.export?.hatch
+        if (!style) return
+        const features = map.value.querySourceFeatures(layer.source, {
+            sourceLayer: layer['source-layer'],
+            filter: layer.filter,
+        })
+        const lines = hatchFeatures(features, map.value.getZoom(), style, view).flatMap(
+            ({ tile, segments }) =>
+                segments.map((segment) => segment.map((p) => tileToLngLat(tile, p).toArray())),
+        )
+        source.setData({
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: { type: 'MultiLineString', coordinates: lines },
+                },
+            ],
+        })
     })
 }
 
@@ -63,10 +70,11 @@ const createTriangleIcon = (color: string, size: number): ImageData => {
 }
 
 let hatchTimeout: ReturnType<typeof setTimeout> | undefined
-const scheduleForestHatch = () => {
+const scheduleHatches = () => {
     clearTimeout(hatchTimeout)
-    hatchTimeout = setTimeout(updateForestHatch, 100)
+    hatchTimeout = setTimeout(updateHatches, 100)
 }
+const isHatchSource = (id: string) => HATCH_LAYERS.some(({ hatchId }) => hatchId === id)
 
 export function useMap() {
     const initMap = (containerId: string, options?: MapOptions): Promise<void> => {
@@ -89,10 +97,10 @@ export function useMap() {
                         map.value?.addImage(e.id, createTriangleIcon(SUMMIT_COLOR, SUMMIT_SIZE))
                     }
                 })
-                map.value.on('moveend', scheduleForestHatch)
+                map.value.on('moveend', scheduleHatches)
                 map.value.on('sourcedata', (e) => {
-                    // Forest tiles loaded (ignores updates of the hatch source itself)
-                    if (e.sourceId !== FOREST_HATCH_ID && e.isSourceLoaded) scheduleForestHatch()
+                    // Map tiles loaded (ignores updates of the hatch sources themselves)
+                    if (!isHatchSource(e.sourceId) && e.isSourceLoaded) scheduleHatches()
                 })
                 map.value.on('load', () => {
                     resolve()
@@ -135,7 +143,7 @@ export function useMap() {
     const toggleMapLayer = (layerId: string, isVisible: boolean): void => {
         if (!map.value) return
         map.value.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none')
-        if (layerId === FOREST_HATCH_ID && isVisible) scheduleForestHatch()
+        if (isHatchSource(layerId) && isVisible) scheduleHatches()
     }
 
     const flyTo = (center: [number, number]): void => {

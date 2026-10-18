@@ -1,10 +1,14 @@
 import type { GeoJSONFeature, FilterSpecification } from 'maplibre-gl'
 import { useMap } from './Map'
-import { SUMMIT_SIZE, type LayerExportStyle } from '@/constants/map'
+import { interpolateZoom, SUMMIT_SIZE, type LayerExportStyle } from '@/constants/map'
 import {
     boundsOf,
     clipPolyline,
+    lineBody,
+    mergeConnectedLines,
+    offsetPolyline,
     removeShapes,
+    ShapeIndex,
     roundedRect,
     distance,
     getTileFeature,
@@ -18,7 +22,7 @@ import {
     type Point,
     type TileFeature,
 } from '@/utils/geometry'
-import { hatchFeatures } from '@/utils/hatch'
+import { hatchFeatures, mercatorViewBounds } from '@/utils/hatch'
 import { textCapHeight, textToPolylines } from '@/utils/hersheyText'
 
 export interface QueryFeatures extends LayerExportStyle {
@@ -41,6 +45,12 @@ const DEFAULT_STROKE = '#ffffff'
 const LABEL_SIZE = 11
 const LABEL_GAP = 3
 const LABEL_LINE_GAP = 0.45
+// Road edges are kept when they are this close to another road's edge, so junctions close cleanly
+const ROAD_EDGE_MARGIN = 0.3
+// Distance under which line ends are joined: shared vertices of two features, and road edges
+// meeting at the corner of a junction
+const SHARED_VERTEX_TOLERANCE = 0.05
+const ROAD_CORNER_TOLERANCE = 0.75
 // Empty margin kept around labels and markers, where other lines are cut
 const KNOCKOUT_PADDING = 3.5
 const KNOCKOUT_RADIUS = 3
@@ -51,13 +61,14 @@ interface SvgPath {
     points: Point[]
     stroke: string
     dash?: string
-    // Labels and markers are never cut by knockouts
-    isProtected: boolean
 }
 
 interface SvgGroup {
     id: string
     paths: SvgPath[]
+    // Areas this group covers (labels, road bodies): lines of the groups below are cut there,
+    // like layers hidden under it on the map
+    knockouts: ConvexShape[]
 }
 
 // Polygons are cut at tile borders by the tile generator: drop those artificial straight edges
@@ -145,8 +156,7 @@ export function useSvgExport() {
     let viewport: Bounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
     // Paths are collected first, then written once every label area to clear is known
     let groups: SvgGroup[] = []
-    let currentGroup: SvgGroup = { id: '', paths: [] }
-    let knockouts: ConvexShape[] = []
+    let currentGroup: SvgGroup = { id: '', paths: [], knockouts: [] }
 
     const exportSvg = (queryFeatures: QueryFeatures[]) => {
         if (!map.value) {
@@ -163,10 +173,10 @@ export function useSvgExport() {
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
         svg.style.background = '#000'
         groups = []
-        knockouts = []
 
         queryFeatures.forEach((qf) => {
-            currentGroup = { id: qf.source, paths: [] }
+            if (qf.skip) return
+            currentGroup = { id: qf.source, paths: [], knockouts: [] }
             groups.push(currentGroup)
             // Lines grouped so that only pieces of the same feature (or hatch orientation) get stitched
             const linesByGroup = new Map<string, Polyline[]>()
@@ -183,7 +193,12 @@ export function useSvgExport() {
             if (qf.marker) {
                 createSvgMarkers(features, qf)
             } else if (qf.hatch) {
-                hatchFeatures(features, map.value!.getZoom()).forEach(({ tile, depth, segments }) =>
+                hatchFeatures(
+                    features,
+                    map.value!.getZoom(),
+                    qf.hatch,
+                    mercatorViewBounds(map.value!),
+                ).forEach(({ tile, depth, segments }) =>
                     addLines(`hatch-${depth}`, toTileLines(tile, segments)),
                 )
             } else {
@@ -191,7 +206,7 @@ export function useSvgExport() {
                     addLines(JSON.stringify(feature.properties), getFeatureLines(feature)),
                 )
             }
-            linesByGroup.forEach((lines) => {
+            const merged = [...linesByGroup.values()].flatMap((lines) => {
                 // Overzoomed tiles can return the same piece several times
                 const seen = new Set<string>()
                 const unique = lines.filter((line) => {
@@ -200,22 +215,25 @@ export function useSvgExport() {
                     seen.add(key)
                     return true
                 })
-                mergeAtTileEdges(unique).forEach((line) =>
-                    createSvgLine(line, qf.stroke ?? DEFAULT_STROKE, qf.dash),
-                )
+                return mergeAtTileEdges(unique)
             })
+            // Separate features drawn as one line (a road split into several ways), for the plotter
+            const lines = qf.hatch ? merged : mergeConnectedLines(merged, SHARED_VERTEX_TOLERANCE)
+            if (qf.road) createSvgRoads(lines, qf)
+            else lines.forEach((line) => createSvgLine(line, qf.stroke ?? DEFAULT_STROKE, qf.dash))
         })
         writeGroups()
         triggerDownload()
     }
 
-    // Writes collected paths, cutting lines that run behind labels and markers
+    // Writes collected paths, each group cut by the areas covered by the groups above it
     const writeGroups = () => {
-        groups.forEach(({ id, paths }) => {
+        const above = new ShapeIndex()
+        const elements = [...groups].reverse().map(({ id, paths, knockouts }) => {
             const group = document.createElementNS(svgNS, 'g')
             group.id = id
-            paths.forEach(({ points, stroke, dash, isProtected }) => {
-                const runs = isProtected ? [points] : removeShapes(points, knockouts)
+            paths.forEach(({ points, stroke, dash }) => {
+                const runs = removeShapes(points, above)
                 runs.forEach((run) => {
                     const path = document.createElementNS(svgNS, 'path')
                     const d = `M${run.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' L')}`
@@ -227,8 +245,34 @@ export function useSvgExport() {
                     group.appendChild(path)
                 })
             })
-            svg.appendChild(group)
+            knockouts.forEach((shape) => above.add(shape))
+            return group
         })
+        elements.reverse().forEach((group) => svg.appendChild(group))
+    }
+
+    // Roads as on the map: the two black edges left visible by the white fill over the casing.
+    // Edges are cut inside other roads, so crossings and junctions stay open like on the map.
+    const createSvgRoads = (centerlines: Point[][], qf: QueryFeatures) => {
+        if (!qf.road) return
+        const zoom = map.value!.getZoom()
+        const casing = interpolateZoom(qf.road.casing, zoom)
+        const fill = interpolateZoom(qf.road.fill, zoom)
+        // Middle of the black band between the fill edge and the casing edge
+        const offset = (casing + fill) / 4
+        const bodies = new ShapeIndex()
+        centerlines.forEach((line) =>
+            lineBody(line, offset - ROAD_EDGE_MARGIN).forEach((shape) => bodies.add(shape)),
+        )
+        const edges = centerlines.flatMap((line) =>
+            [offset, -offset].flatMap((side) => removeShapes(offsetPolyline(line, side), bodies)),
+        )
+        // Edges cut at a junction meet the next road's edge at the corner: draw them as one line
+        mergeConnectedLines(edges, ROAD_CORNER_TOLERANCE).forEach((edge) =>
+            createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
+        )
+        // Layers under the roads are hidden by the casing on the map
+        centerlines.forEach((line) => currentGroup.knockouts.push(...lineBody(line, casing / 2)))
     }
 
     const resetSvg = () => {
@@ -324,8 +368,10 @@ export function useSvgExport() {
                 if (!isInViewport(center) || seen.has(key)) return
                 seen.add(key)
                 const triangle = trianglePoints(center, SUMMIT_SIZE)
-                knockouts.push(roundedRect(boundsOf(triangle, KNOCKOUT_PADDING), KNOCKOUT_RADIUS))
-                createSvgLine(triangle, stroke, undefined, true)
+                currentGroup.knockouts.push(
+                    roundedRect(boundsOf(triangle, KNOCKOUT_PADDING), KNOCKOUT_RADIUS),
+                )
+                createSvgLine(triangle, stroke)
                 if (qf.label) createSvgLabel(center, feature.properties, stroke)
             })
         })
@@ -351,22 +397,17 @@ export function useSvgExport() {
                 anchor: 'middle',
             })
             if (!polylines.length) return
-            knockouts.push(
+            currentGroup.knockouts.push(
                 roundedRect(boundsOf(polylines.flat(), KNOCKOUT_PADDING), KNOCKOUT_RADIUS),
             )
-            polylines.forEach((polyline) => createSvgLine(polyline, stroke, undefined, true))
+            polylines.forEach((polyline) => createSvgLine(polyline, stroke))
             baseline += size * LABEL_LINE_GAP
         })
     }
 
-    const createSvgLine = (
-        pixels: Point[],
-        stroke: string,
-        dash?: string,
-        isProtected = false,
-    ): void => {
+    const createSvgLine = (pixels: Point[], stroke: string, dash?: string): void => {
         clipPolyline(pixels, viewport).forEach((points) =>
-            currentGroup.paths.push({ points, stroke, dash, isProtected }),
+            currentGroup.paths.push({ points, stroke, dash }),
         )
     }
 

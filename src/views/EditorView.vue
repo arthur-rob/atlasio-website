@@ -95,13 +95,11 @@ const selectedLayer = ref<string[]>(
 )
 
 const queryFeatures = computed<QueryFeatures[]>(() => {
-    return selectedLayer.value
-        .map((layerId): QueryFeatures | undefined => {
-            const layer = MAP_LAYERS.find((el) => el.id === layerId) as
-                | FillLayerSpecification
-                | LineLayerSpecification
-                | undefined
-            if (!layer?.['source-layer']) return undefined
+    // Map order, so that layers drawn above others on the map also cut them in the export
+    return MAP_LAYERS.filter((el) => selectedLayer.value.includes(el.id))
+        .map((el): QueryFeatures | undefined => {
+            const layer = el as FillLayerSpecification | LineLayerSpecification
+            if (!layer['source-layer']) return undefined
             return {
                 tiles: layer.source,
                 source: layer['source-layer'],
