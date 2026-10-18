@@ -5,7 +5,6 @@ import {
     boundsOf,
     clipPolyline,
     lineBody,
-    mergeConnectedLines,
     offsetPolyline,
     removeShapes,
     ShapeIndex,
@@ -47,10 +46,6 @@ const LABEL_GAP = 3
 const LABEL_LINE_GAP = 0.45
 // Road edges are kept when they are this close to another road's edge, so junctions close cleanly
 const ROAD_EDGE_MARGIN = 0.3
-// Distance under which line ends are joined: shared vertices of two features, and road edges
-// meeting at the corner of a junction
-const SHARED_VERTEX_TOLERANCE = 0.05
-const ROAD_CORNER_TOLERANCE = 0.75
 // Empty margin kept around labels and markers, where other lines are cut
 const KNOCKOUT_PADDING = 3.5
 const KNOCKOUT_RADIUS = 3
@@ -217,10 +212,8 @@ export function useSvgExport() {
                 })
                 return mergeAtTileEdges(unique)
             })
-            // Separate features drawn as one line (a road split into several ways), for the plotter
-            const lines = qf.hatch ? merged : mergeConnectedLines(merged, SHARED_VERTEX_TOLERANCE)
-            if (qf.road) createSvgRoads(lines, qf)
-            else lines.forEach((line) => createSvgLine(line, qf.stroke ?? DEFAULT_STROKE, qf.dash))
+            if (qf.road) createSvgRoads(merged, qf)
+            else merged.forEach((line) => createSvgLine(line, qf.stroke ?? DEFAULT_STROKE, qf.dash))
         })
         writeGroups()
         triggerDownload()
@@ -264,15 +257,15 @@ export function useSvgExport() {
         centerlines.forEach((line) =>
             lineBody(line, offset - ROAD_EDGE_MARGIN).forEach((shape) => bodies.add(shape)),
         )
-        const edges = centerlines.flatMap((line) =>
-            [offset, -offset].flatMap((side) => removeShapes(offsetPolyline(line, side), bodies)),
-        )
-        // Edges cut at a junction meet the next road's edge at the corner: draw them as one line
-        mergeConnectedLines(edges, ROAD_CORNER_TOLERANCE).forEach((edge) =>
-            createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
-        )
-        // Layers under the roads are hidden by the casing on the map
-        centerlines.forEach((line) => currentGroup.knockouts.push(...lineBody(line, casing / 2)))
+        centerlines.forEach((line) => {
+            ;[offset, -offset].forEach((side) =>
+                removeShapes(offsetPolyline(line, side), bodies).forEach((edge) =>
+                    createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
+                ),
+            )
+            // Layers under the roads are hidden by the casing on the map
+            currentGroup.knockouts.push(...lineBody(line, casing / 2))
+        })
     }
 
     const resetSvg = () => {
