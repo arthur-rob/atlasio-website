@@ -44,8 +44,6 @@ const DEFAULT_STROKE = '#ffffff'
 const LABEL_SIZE = 11
 const LABEL_GAP = 3
 const LABEL_LINE_GAP = 0.45
-// Road edges are kept when they are this close to another road's edge, so junctions close cleanly
-const ROAD_EDGE_MARGIN = 0.3
 // Empty margin kept around labels and markers, where other lines are cut
 const KNOCKOUT_PADDING = 3.5
 const KNOCKOUT_RADIUS = 3
@@ -253,13 +251,17 @@ export function useSvgExport() {
         const fill = interpolateZoom(qf.road.fill, zoom)
         // Middle of the black band between the fill edge and the casing edge
         const offset = (casing + fill) / 4
+        // Each edge is cut where it enters another road, exactly on that road's edge. A road's own
+        // area is skipped: its edges lie on its border and would otherwise be removed
         const bodies = new ShapeIndex()
-        centerlines.forEach((line) =>
-            lineBody(line, offset - ROAD_EDGE_MARGIN).forEach((shape) => bodies.add(shape)),
-        )
-        centerlines.forEach((line) => {
+        const ownBodies = centerlines.map((line) => {
+            const shapes = lineBody(line, offset)
+            shapes.forEach((shape) => bodies.add(shape))
+            return new Set(shapes)
+        })
+        centerlines.forEach((line, i) => {
             ;[offset, -offset].forEach((side) =>
-                removeShapes(offsetPolyline(line, side), bodies).forEach((edge) =>
+                removeShapes(offsetPolyline(line, side), bodies, ownBodies[i]).forEach((edge) =>
                     createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
                 ),
             )

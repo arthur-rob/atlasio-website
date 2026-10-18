@@ -304,8 +304,13 @@ const shapeInterval = (p0: Point, p1: Point, shape: ConvexShape): [number, numbe
     return [t0, t1]
 }
 
-// Cuts the parts of a polyline inside any of the indexed shapes, splitting it into visible runs
-export const removeShapes = (points: Point[], index: ShapeIndex): Point[][] => {
+// Cuts the parts of a polyline inside any of the indexed shapes (except `exclude`), splitting it
+// into visible runs
+export const removeShapes = (
+    points: Point[],
+    index: ShapeIndex,
+    exclude?: Set<ConvexShape>,
+): Point[][] => {
     const runs: Point[][] = []
     let current: Point[] = [points[0]!]
     for (let i = 0; i < points.length - 1; i++) {
@@ -313,6 +318,7 @@ export const removeShapes = (points: Point[], index: ShapeIndex): Point[][] => {
         const b = points[i + 1]!
         const hidden = index
             .query(boundsOf([a, b]))
+            .filter((shape) => !exclude?.has(shape))
             .map((shape) => shapeInterval(a, b, shape))
             .filter(
                 (interval): interval is [number, number] => !!interval && interval[1] > interval[0],
