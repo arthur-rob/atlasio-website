@@ -5,6 +5,7 @@ import {
     boundsOf,
     clipPolyline,
     lineBody,
+    mergeConnectedLines,
     offsetPolyline,
     removeShapes,
     ShapeIndex,
@@ -45,6 +46,9 @@ const LABEL_SIZE = 11
 const LABEL_GAP = 3
 const LABEL_LINE_GAP = 0.45
 // Empty margin kept around labels and markers, where other lines are cut
+// Distance under which road line ends are joined: shared vertices of two road features, and road
+// edges meeting at the corner of a junction (they end exactly on each other's edge)
+const ROAD_JOIN_TOLERANCE = 0.1
 const KNOCKOUT_PADDING = 3.5
 const KNOCKOUT_RADIUS = 3
 const svgNS = 'http://www.w3.org/2000/svg'
@@ -244,8 +248,10 @@ export function useSvgExport() {
 
     // Roads as on the map: the two black edges left visible by the white fill over the casing.
     // Edges are cut inside other roads, so crossings and junctions stay open like on the map.
-    const createSvgRoads = (centerlines: Point[][], qf: QueryFeatures) => {
+    const createSvgRoads = (features: Point[][], qf: QueryFeatures) => {
         if (!qf.road) return
+        // A road split into several features is offset as one line, with mitred bends
+        const centerlines = mergeConnectedLines(features, ROAD_JOIN_TOLERANCE)
         const zoom = map.value!.getZoom()
         const casing = interpolateZoom(qf.road.casing, zoom)
         const fill = interpolateZoom(qf.road.fill, zoom)
@@ -259,15 +265,18 @@ export function useSvgExport() {
             shapes.forEach((shape) => bodies.add(shape))
             return new Set(shapes)
         })
-        centerlines.forEach((line, i) => {
-            ;[offset, -offset].forEach((side) =>
-                removeShapes(offsetPolyline(line, side), bodies, ownBodies[i]).forEach((edge) =>
-                    createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
-                ),
-            )
-            // Layers under the roads are hidden by the casing on the map
-            currentGroup.knockouts.push(...lineBody(line, casing / 2))
-        })
+        const edges = centerlines.flatMap((line, i) =>
+            [offset, -offset].flatMap((side) =>
+                removeShapes(offsetPolyline(line, side), bodies, ownBodies[i]),
+            ),
+        )
+        // Edges cut at a junction end on the next road's edge: continue around the corner, so the
+        // plotter draws connected edges as one line
+        mergeConnectedLines(edges, ROAD_JOIN_TOLERANCE).forEach((edge) =>
+            createSvgLine(edge, qf.stroke ?? DEFAULT_STROKE, qf.dash),
+        )
+        // Layers under the roads are hidden by the casing on the map
+        centerlines.forEach((line) => currentGroup.knockouts.push(...lineBody(line, casing / 2)))
     }
 
     const resetSvg = () => {

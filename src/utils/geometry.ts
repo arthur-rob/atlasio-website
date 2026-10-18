@@ -98,8 +98,21 @@ const clipSegment = (p0: Point, p1: Point, b: Bounds): [Point, Point] | null => 
     return [t0 === 0 ? p0 : lerp(p0, p1, t0), t1 === 1 ? p1 : lerp(p0, p1, t1)]
 }
 
-// Clips a polyline to bounds, splitting it into several runs when it leaves and re-enters
+// Clips a polyline to bounds, splitting it into several runs when it leaves and re-enters.
+// A closed line keeps its start and end runs joined, so it is cut only where it leaves the bounds.
 export const clipPolyline = (points: Point[], b: Bounds): Point[][] => {
+    const runs = clipOpenPolyline(points, b)
+    const first = points[0]!
+    const last = points[points.length - 1]!
+    const isClosed = points.length > 3 && first.x === last.x && first.y === last.y
+    if (!isClosed || runs.length < 2) return runs
+    const startRun = runs[0]!
+    const endRun = runs[runs.length - 1]!
+    if (startRun[0] !== first || endRun[endRun.length - 1] !== last) return runs
+    return [[...endRun, ...startRun.slice(1)], ...runs.slice(1, -1)]
+}
+
+const clipOpenPolyline = (points: Point[], b: Bounds): Point[][] => {
     const runs: Point[][] = []
     let current: Point[] = []
     for (let i = 0; i < points.length - 1; i++) {
@@ -282,6 +295,115 @@ export const offsetPolyline = (input: Point[], offset: number): Point[] => {
         ...inner,
         shift(points[points.length - 1]!, normals[normals.length - 1]!),
     ]
+}
+
+// Crossing point of segments [a, b] and [c, d], if they cross
+const segmentIntersection = (a: Point, b: Point, c: Point, d: Point): Point | undefined => {
+    const r = { x: b.x - a.x, y: b.y - a.y }
+    const s = { x: d.x - c.x, y: d.y - c.y }
+    const denominator = r.x * s.y - r.y * s.x
+    if (denominator === 0) return undefined
+    const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / denominator
+    const u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / denominator
+    if (t < 0 || t > 1 || u < 0 || u > 1) return undefined
+    return lerp(a, b, t)
+}
+
+// Joins lines whose ends are within `tolerance` pixels into one continuous line, when exactly two
+// line ends meet there (a junction of three lines or more is left as is). Lines may be reversed.
+export const mergeConnectedLines = (lines: Point[][], tolerance: number): Point[][] => {
+    interface End {
+        line: number
+        atStart: boolean
+        point: Point
+    }
+    const cell = (p: Point) => [Math.floor(p.x / tolerance), Math.floor(p.y / tolerance)] as const
+    const grid = new Map<string, End[]>()
+    lines.forEach((line, index) => {
+        if (line.length < 2) return
+        ;[true, false].forEach((atStart) => {
+            const point = atStart ? line[0]! : line[line.length - 1]!
+            const key = cell(point).join()
+            grid.set(key, [...(grid.get(key) ?? []), { line: index, atStart, point }])
+        })
+    })
+    const near = (end: End): End[] => {
+        const [cx, cy] = cell(end.point)
+        const found: End[] = []
+        for (let x = cx - 1; x <= cx + 1; x++) {
+            for (let y = cy - 1; y <= cy + 1; y++) {
+                grid.get(`${x},${y}`)?.forEach((other) => {
+                    const isSelf = other.line === end.line && other.atStart === end.atStart
+                    if (!isSelf && distance(other.point, end.point) <= tolerance) found.push(other)
+                })
+            }
+        }
+        return found
+    }
+    // The single end meeting `end`, if the two of them are alone at that point
+    const partnerOf = (end: End): End | undefined => {
+        const candidates = near(end)
+        if (candidates.length !== 1) return undefined
+        return near(candidates[0]!).length === 1 ? candidates[0] : undefined
+    }
+    const endOf = (line: number, atStart: boolean): End => {
+        const points = lines[line]!
+        return { line, atStart, point: atStart ? points[0]! : points[points.length - 1]! }
+    }
+
+    const used = new Set<number>()
+    // Follows the chain from its tail, appending the connected lines; returns the final tail
+    const extend = (chain: Point[], tail: End): End => {
+        for (;;) {
+            const next = partnerOf(tail)
+            if (!next || used.has(next.line)) return tail
+            used.add(next.line)
+            const points = next.atStart ? lines[next.line]! : [...lines[next.line]!].reverse()
+            const last = chain[chain.length - 1]!
+            // Ends overshooting each other (road edges at a corner) would draw a small loop:
+            // cut both lines where they cross instead
+            const crossing =
+                chain.length > 1 && points.length > 1
+                    ? segmentIntersection(chain[chain.length - 2]!, last, points[0]!, points[1]!)
+                    : undefined
+            if (crossing) {
+                chain[chain.length - 1] = crossing
+                chain.push(...points.slice(1))
+            } else {
+                // Same point twice when both lines share it; otherwise keep both to draw the corner
+                chain.push(...points.slice(distance(last, points[0]!) < 1e-3 ? 1 : 0))
+            }
+            tail = endOf(next.line, !next.atStart)
+        }
+    }
+
+    const merged: Point[][] = []
+    lines.forEach((line, index) => {
+        if (used.has(index) || line.length < 2) return
+        used.add(index)
+        const chain = [...line]
+        const head = extend(chain, endOf(index, false))
+        chain.reverse()
+        const tail = extend(chain, endOf(index, true))
+        // Both ends of the chain meet: close the loop
+        const closing = partnerOf(tail)
+        if (closing?.line === head.line && closing.atStart === head.atStart) {
+            const n = chain.length
+            const crossing =
+                n > 3
+                    ? segmentIntersection(chain[n - 2]!, chain[n - 1]!, chain[0]!, chain[1]!)
+                    : undefined
+            if (crossing) {
+                // Overshooting ends: close the loop at their crossing point
+                chain[0] = crossing
+                chain[n - 1] = crossing
+            } else {
+                chain.push(chain[0]!)
+            }
+        }
+        merged.push(chain)
+    })
+    return merged
 }
 
 // Cyrus–Beck: parameter range [t0, t1] of segment [p0, p1] inside a convex shape, or null
