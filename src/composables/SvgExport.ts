@@ -1,6 +1,13 @@
 import type { GeoJSONFeature, FilterSpecification } from 'maplibre-gl'
 import { useMap } from './Map'
-import { interpolateZoom, SUMMIT_SIZE, type LayerExportStyle } from '@/constants/map'
+import {
+    interpolateZoom,
+    PLOTTER_HEIGHT_MM,
+    PLOTTER_WIDTH_MM,
+    SUMMIT_LABEL_SIZE,
+    SUMMIT_SIZE,
+    type LayerExportStyle,
+} from '@/constants/map'
 import {
     boundsOf,
     clipPolyline,
@@ -41,8 +48,7 @@ interface Polyline {
 // Max pixel gap between two tile pieces to stitch (tiles are simplified independently)
 const MERGE_TOLERANCE = 2
 const DEFAULT_STROKE = '#ffffff'
-// Label font size and spacing, in pixels / em
-const LABEL_SIZE = 11
+// Label spacing, in pixels / em
 const LABEL_GAP = 3
 const LABEL_LINE_GAP = 0.45
 // Empty margin kept around labels and markers, where other lines are cut
@@ -155,19 +161,20 @@ export function useSvgExport() {
     let groups: SvgGroup[] = []
     let currentGroup: SvgGroup = { id: '', paths: [], knockouts: [] }
 
-    const exportSvg = (queryFeatures: QueryFeatures[]) => {
+    // `area` is the map pixel area to export, it is scaled to the plotter drawable size
+    const exportSvg = (queryFeatures: QueryFeatures[], area: Bounds) => {
         if (!map.value) {
             console.warn('map is undefined')
             return
         }
         resetSvg()
-        const width = map.value.getContainer().offsetWidth || 420
-        const height = map.value.getContainer().offsetHeight || 420
-        viewport = { minX: 0, minY: 0, maxX: width, maxY: height }
+        viewport = area
+        const width = area.maxX - area.minX
+        const height = area.maxY - area.minY
         svg.setAttribute('xmlns', svgNS)
-        svg.setAttribute('width', width.toString())
-        svg.setAttribute('height', height.toString())
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
+        svg.setAttribute('width', `${PLOTTER_WIDTH_MM}mm`)
+        svg.setAttribute('height', `${PLOTTER_HEIGHT_MM}mm`)
+        svg.setAttribute('viewBox', `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`)
         svg.style.background = '#000'
         groups = []
 
@@ -231,7 +238,13 @@ export function useSvgExport() {
                 const runs = removeShapes(points, above)
                 runs.forEach((run) => {
                     const path = document.createElementNS(svgNS, 'path')
-                    const d = `M${run.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' L')}`
+                    // Map pixels to coordinates relative to the exported area
+                    const d = `M${run
+                        .map(
+                            (p) =>
+                                `${(p.x - viewport.minX).toFixed(2)},${(p.y - viewport.minY).toFixed(2)}`,
+                        )
+                        .join(' L')}`
                     path.setAttribute('d', d)
                     path.setAttribute('fill', 'none')
                     path.setAttribute('stroke', stroke)
@@ -388,9 +401,9 @@ export function useSvgExport() {
         stroke: string,
     ) => {
         const lines: { text: string; size: number }[] = []
-        if (properties.name) lines.push({ text: String(properties.name), size: LABEL_SIZE })
+        if (properties.name) lines.push({ text: String(properties.name), size: SUMMIT_LABEL_SIZE })
         if (properties.ele !== undefined)
-            lines.push({ text: `${properties.ele} m`, size: LABEL_SIZE * 0.85 })
+            lines.push({ text: `${properties.ele} m`, size: SUMMIT_LABEL_SIZE * 0.85 })
         let baseline = center.y + SUMMIT_SIZE / 2 + LABEL_GAP
         lines.forEach(({ text, size }) => {
             baseline += textCapHeight(size)

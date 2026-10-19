@@ -60,14 +60,19 @@
                     />
                     <div class="flex justify-between">
                         <BaseButton variant="plain" @click="stepIndex--">Retour</BaseButton>
-                        <BaseButton
-                            append-icon="arrow_right_alt"
-                            @click="svg.exportSvg(queryFeatures)"
+                        <BaseButton append-icon="arrow_right_alt" @click="generateSvg"
                             >Generate</BaseButton
                         >
                     </div>
                 </div>
             </BaseCard>
+            <div class="plot-area">
+                <div ref="plotFrame" class="plot-frame">
+                    <span class="plot-frame-label"
+                        >{{ PLOTTER_WIDTH_MM }} × {{ PLOTTER_HEIGHT_MM }} mm</span
+                    >
+                </div>
+            </div>
         </template>
     </EditorLayout>
 </template>
@@ -81,7 +86,13 @@ import BaseAdressAutoComplete from '@/components/Ui/BaseAdressAutoComplete.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useMap } from '@/composables/Map'
 import { useSvgExport, type QueryFeatures } from '@/composables/SvgExport'
-import { MAP_LAYERS, MAP_LAYERS_LABELS, type LayerExportStyle } from '@/constants/map'
+import {
+    MAP_LAYERS,
+    MAP_LAYERS_LABELS,
+    PLOTTER_HEIGHT_MM,
+    PLOTTER_WIDTH_MM,
+    type LayerExportStyle,
+} from '@/constants/map'
 import type { FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl'
 import { useStravaStore } from '@/stores/Strava'
 
@@ -90,6 +101,9 @@ const svg = useSvgExport()
 const isMapLoaded = ref(false)
 const stepIndex = ref(1)
 const stravaStore = useStravaStore()
+// Plotter drawable area drawn over the map, only what is inside it is exported
+const plotFrame = ref<HTMLElement>()
+const plotRatio = PLOTTER_WIDTH_MM / PLOTTER_HEIGHT_MM
 const selectedLayer = ref<string[]>(
     MAP_LAYERS.filter((el) => el.layout?.visibility !== 'none').map((el) => el.id),
 )
@@ -109,6 +123,19 @@ const queryFeatures = computed<QueryFeatures[]>(() => {
         })
         .filter((f): f is QueryFeatures => !!f)
 })
+
+const generateSvg = () => {
+    const container = map.map.value?.getContainer()
+    if (!plotFrame.value || !container) return
+    const frame = plotFrame.value.getBoundingClientRect()
+    const origin = container.getBoundingClientRect()
+    svg.exportSvg(queryFeatures.value, {
+        minX: frame.left - origin.left,
+        minY: frame.top - origin.top,
+        maxX: frame.right - origin.left,
+        maxY: frame.bottom - origin.top,
+    })
+}
 
 const selectLocationMap = (place: AddressFeature) => {
     map.flyTo(place.center)
@@ -150,7 +177,36 @@ onMounted(async () => {
 </script>
 <style scoped lang="scss">
 .option-form {
+    position: relative;
     z-index: 10;
+}
+.plot-area {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    container-type: size;
+    // The map stays draggable through the overlay
+    pointer-events: none;
+}
+.plot-frame {
+    position: relative;
+    width: min(90cqw, 90cqh * v-bind(plotRatio));
+    aspect-ratio: v-bind(plotRatio);
+    // Outline and shadow are drawn outside the box: the box itself is exactly the exported area
+    outline: 2px dashed var(--ui-accent);
+    box-shadow: 0 0 0 100vmax rgb(255 255 255 / 0.6);
+}
+.plot-frame-label {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    color: var(--ui-accent);
 }
 #map {
     position: absolute;

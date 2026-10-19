@@ -22,6 +22,11 @@ export const SUMMIT_COLOR = '#795548'
 export const SUMMIT_ICON_ID = 'summit-triangle'
 // Triangle width in pixels, same on the map and in the export
 export const SUMMIT_SIZE = 10
+// Label font size in pixels, same on the map and in the export
+export const SUMMIT_LABEL_SIZE = 13
+// Plotter drawable area in millimetres: the SVG export is cropped to this ratio
+export const PLOTTER_WIDTH_MM = 200
+export const PLOTTER_HEIGHT_MM = 286
 export const FOREST_LAYER_ID = 'forest'
 export const BUILDING_LAYER_ID = 'buildings-fill'
 export const BUILDING_HATCH_ID = 'buildings-hatch'
@@ -140,6 +145,9 @@ export const MAP_LAYERS: LayerSpecification[] = [
         source: 'planet',
         'source-layer': 'landcover',
         filter: ['==', ['get', 'class'], 'wood'],
+        layout: {
+            visibility: 'none',
+        },
         paint: {
             'fill-opacity': 0,
         },
@@ -151,6 +159,9 @@ export const MAP_LAYERS: LayerSpecification[] = [
         id: FOREST_HATCH_ID,
         type: 'line',
         source: FOREST_HATCH_ID,
+        layout: {
+            visibility: 'none',
+        },
         paint: {
             'line-color': FOREST_COLOR,
             'line-width': 1,
@@ -353,7 +364,7 @@ export const MAP_LAYERS: LayerSpecification[] = [
                 { 'font-scale': 0.85 },
             ],
             'text-font': ['Noto Sans Regular'],
-            'text-size': 11,
+            'text-size': SUMMIT_LABEL_SIZE,
             'text-anchor': 'top',
             'text-offset': [0, 0.7],
             'text-optional': true,
